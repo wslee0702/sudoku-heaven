@@ -342,6 +342,9 @@ function showStartScreen() {
 }
 
 function showHofOverlay() {
+    const levelFilter = document.getElementById('hof-level-filter');
+    if (levelFilter) levelFilter.value = Game.difficulty;
+    document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
     renderHallOfFame();
     document.getElementById('hof-overlay').classList.remove('hidden');
 }
@@ -745,7 +748,6 @@ function endSeason() {
     const season = getCurrentSeason();
     if (!confirm(`"${season.name}"을 종료하고 명예의 전당에 보관할까요?\n새 시즌이 바로 시작됩니다.`)) return;
     archiveSeason(season);
-    renderLeaderboard();
     renderHallOfFame();
     alert(`${season.name}이 종료되어 명예의 전당에 보관됐어요! 새 시즌이 시작됩니다.`);
 }
@@ -812,112 +814,11 @@ function saveRecord(name) {
     // 전 세계 기록에도 저장 (실패해도 로컬은 이미 저장됨)
     saveScoreOnline(record);
 
-    renderLeaderboard();
-
-    // 저장 후: celeb 정보 + save-section 숨기고 post-save-section 표시
+    // 저장 후: celeb 정보 + save-section 숨기고 성공 메시지 표시
     document.querySelector('.celeb-main-info').style.display = 'none';
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
-
-    showPostSaveLeaderboard(record, records);
     stopConfetti();
-}
-
-// ── post-save 3탭 데이터 캐시
-let _psData = {};
-
-function showPostSaveLeaderboard(record, currentSeasonRecords) {
-    const season = getCurrentSeason();
-
-    // 1. 현재 시즌 · 현재 레벨
-    const levelRecs = currentSeasonRecords.filter(r => r.difficulty === Game.difficulty);
-    const levelIdx  = (() => {
-        const i = levelRecs.findIndex(r =>
-            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-        return i >= 0 && i < 10 ? i : -1;
-    })();
-
-    // 2. 현재 시즌 · 전체 레벨 (레벨 뱃지 표시)
-    const allIdx = (() => {
-        const i = currentSeasonRecords.findIndex(r =>
-            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-        return i >= 0 && i < 10 ? i : -1;
-    })();
-
-    // 3. 역대 · 현재 레벨 (시즌 뱃지 표시)
-    const alltimeRecs = getAlltimeLevelRecords(Game.difficulty);
-    const atIdx = (() => {
-        const i = alltimeRecs.findIndex(r =>
-            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-        return i >= 0 && i < 10 ? i : -1;
-    })();
-
-    _psData = {
-        level:   { records: levelRecs.slice(0, 10),             idx: levelIdx, showLevel: false, showSeason: false },
-        all:     { records: currentSeasonRecords.slice(0, 10),  idx: allIdx,   showLevel: true,  showSeason: false },
-        alltime: { records: alltimeRecs.slice(0, 10),           idx: atIdx,    showLevel: false, showSeason: true  },
-    };
-
-    // 탭 레이블 업데이트 (시즌명 + 연월)
-    const d = new Date();
-    const mon = d.toLocaleString('en-US', { month: 'short' });
-    const seasonLabel = `${season.name} (${d.getFullYear()}.${mon}.)`;
-    document.querySelectorAll('.ps-tab').forEach(btn => {
-        const t = btn.dataset.pstab;
-        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${Game.difficulty}`;
-        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
-        if (t === 'alltime') btn.textContent = `역대 · Lv.${Game.difficulty}`;
-    });
-
-    // 첫 번째 탭 활성화
-    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
-    renderPostSaveTab('level');
-}
-
-function renderPostSaveTab(tab) {
-    const { records = [], idx = -1, showLevel = false, showSeason = false } = _psData[tab] || {};
-    renderPostSaveRecords(records, idx, showLevel, showSeason);
-}
-
-// 역대 기록 (현재 시즌 + 아카이브) - 시즌 이름 포함
-function getAlltimeLevelRecords(level) {
-    const season = getCurrentSeason();
-    const current = getCurrentSeasonRecords()
-        .filter(r => r.difficulty === level)
-        .map(r => ({ ...r, seasonName: season.name }));
-
-    const archived = [];
-    getArchive().forEach(s => {
-        try {
-            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
-            archived.push(...sr.filter(r => r.difficulty === level).map(r => ({ ...r, seasonName: s.name })));
-        } catch {}
-    });
-
-    return [...current, ...archived].sort((a, b) => a.score - b.score);
-}
-
-function renderPostSaveRecords(records, highlightIdx = -1, showLevel = false, showSeason = false) {
-    const container = document.getElementById('post-save-records');
-    if (records.length === 0) {
-        container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
-        return;
-    }
-    container.innerHTML = records.map((r, i) => {
-        const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
-        const hl = i === highlightIdx ? ' post-save-highlight' : '';
-        const levelBadge  = showLevel  ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
-        const seasonBadge = showSeason && r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
-        return `
-            <div class="post-save-row${hl}">
-                <span class="post-rank">${icon}</span>
-                <span class="post-name">${r.name}${levelBadge}${seasonBadge}</span>
-                <span class="post-score">${formatTime(r.timeSeconds)}</span>
-                <span class="post-hints">${r.hintsUsed}힌트</span>
-                <span class="post-pts">${r.score}초</span>
-            </div>
-        `;
-    }).join('');
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -962,45 +863,92 @@ function showCelebration() {
     document.querySelector('.celeb-main-info').style.display = '';
     document.querySelector('.save-section').style.display = '';
     document.getElementById('post-save-section').classList.add('hidden');
-    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
 
     document.getElementById('player-name').value = '';
     document.getElementById('celebration-overlay').classList.remove('hidden');
     launchConfetti();
 }
 
-// ===================== 기록판 렌더링 =====================
+// ===================== 명예의 전당 렌더링 (3탭) =====================
 
-function renderLeaderboard() {
-    const season    = getCurrentSeason();
-    const filterVal = document.getElementById('lb-filter').value;
+function renderHallOfFame() {
+    const season = getCurrentSeason();
+    const level  = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
 
-    document.getElementById('lb-season-name').textContent = season.name;
-    document.getElementById('lb-season-date').textContent =
-        `시작: ${season.startDate} | 다음 자동 종료: ${season.autoEndDate || '-'}`;
+    const d   = new Date();
+    const mon = d.toLocaleString('en-US', { month: 'short' });
+    const seasonLabel = `${season.name} (${d.getFullYear()}.${mon}.)`;
 
-    let records = getCurrentSeasonRecords();
-    if (filterVal !== 'all') {
-        const lv = parseInt(filterVal.replace('level-', ''));
-        records = records.filter(r => r.difficulty === lv);
+    document.getElementById('hof-season-label').textContent = seasonLabel;
+
+    // 탭 레이블 업데이트
+    document.querySelectorAll('.hof-tab').forEach(btn => {
+        const t = btn.dataset.hoftab;
+        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${level}`;
+        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
+        if (t === 'alltime') btn.textContent = `역대 · Lv.${level}`;
+    });
+
+    const activeTab = document.querySelector('.hof-tab.active');
+    renderHofTab(activeTab ? activeTab.dataset.hoftab : 'level', level);
+}
+
+function renderHofTab(tab, level) {
+    const showLevel  = tab === 'all';
+    const showSeason = tab === 'alltime';
+    let records = [];
+
+    if (tab === 'level') {
+        records = getCurrentSeasonRecords()
+            .filter(r => r.difficulty === level)
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 1000);
+    } else if (tab === 'all') {
+        records = getCurrentSeasonRecords()
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 1000);
+    } else {
+        records = getAlltimeLevelRecords(level).slice(0, 1000);
     }
-    records.sort((a, b) => a.score - b.score);
-    const top = records.slice(0, 15);
 
-    const container = document.getElementById('lb-entries');
-    if (top.length === 0) {
-        container.innerHTML = '<div class="lb-empty">아직 기록이 없어요. 게임을 완성하면 여기에 나타나요!</div>';
+    renderHofRecords(records, showLevel, showSeason);
+}
+
+// 역대 기록 (현재 시즌 + 아카이브) - 시즌 이름 포함
+function getAlltimeLevelRecords(level) {
+    const season  = getCurrentSeason();
+    const current = getCurrentSeasonRecords()
+        .filter(r => r.difficulty === level)
+        .map(r => ({ ...r, seasonName: season.name }));
+
+    const archived = [];
+    getArchive().forEach(s => {
+        try {
+            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
+            archived.push(...sr.filter(r => r.difficulty === level).map(r => ({ ...r, seasonName: s.name })));
+        } catch {}
+    });
+
+    return [...current, ...archived].sort((a, b) => a.score - b.score);
+}
+
+function renderHofRecords(records, showLevel = false, showSeason = false) {
+    const container = document.getElementById('hof-records');
+    if (records.length === 0) {
+        container.innerHTML = '<div class="lb-empty">아직 기록이 없어요!</div>';
         return;
     }
 
-    container.innerHTML = top.map((r, i) => {
-        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-        const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+    const rowsHtml = records.map((r, i) => {
+        const rankClass  = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const rankIcon   = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+        const levelBadge  = showLevel  ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
+        const seasonBadge = showSeason && r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
         return `
             <div class="lb-entry-row">
                 <span class="lb-rank ${rankClass}">${rankIcon}</span>
-                <span class="lb-name">${r.name}</span>
-                <span>${r.diffName} Lv.${r.difficulty}</span>
+                <span class="lb-name">${r.name}${levelBadge}${seasonBadge}</span>
+                <span>${r.diffName || ''} Lv.${r.difficulty}</span>
                 <span class="lb-time">${formatTime(r.timeSeconds)}</span>
                 <span>${r.hintsUsed}개</span>
                 <span class="lb-score">${r.score}초</span>
@@ -1008,73 +956,16 @@ function renderLeaderboard() {
             </div>
         `;
     }).join('');
-}
 
-// ===================== 명예의 전당 렌더링 =====================
-
-function renderHallOfFame() {
-    const archive   = getArchive();
-    const container = document.getElementById('hof-entries');
-
-    if (archive.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
-
-    container.innerHTML = [...archive].reverse().map(season => {
-        const records = (() => {
-            try { return JSON.parse(localStorage.getItem(getSeasonRecordsKey(season.id))) || []; }
-            catch { return []; }
-        })();
-        records.sort((a, b) => a.score - b.score);
-        const top = records.slice(0, 1000);
-
-        const rowsHtml = top.length === 0
-            ? '<div class="lb-empty">기록 없음</div>'
-            : top.map((r, i) => {
-                const rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
-                const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-                return `
-                    <div class="lb-entry-row">
-                        <span class="lb-rank ${rankClass}">${rankIcon}</span>
-                        <span class="lb-name">${r.name}</span>
-                        <span>${r.diffName} Lv.${r.difficulty}</span>
-                        <span class="lb-time">${formatTime(r.timeSeconds)}</span>
-                        <span>${r.hintsUsed}개</span>
-                        <span class="lb-score">${r.score}초</span>
-                        <span class="lb-date">${r.date}</span>
-                    </div>
-                `;
-            }).join('');
-
-        return `
-            <div class="hof-season-item">
-                <div class="hof-season-header" onclick="toggleHofSeason(this)">
-                    <div>
-                        <span>🏆 ${season.name}</span>
-                        <span class="hof-season-meta"> &nbsp;${season.startDate} ~ ${season.endDate || '?'} &nbsp;(${records.length}개 기록)</span>
-                    </div>
-                    <span class="hof-toggle-icon">▼</span>
-                </div>
-                <div class="hof-season-records">
-                    <div class="lb-table-wrap">
-                        <div class="lb-header-row">
-                            <span>순위</span><span>닉네임</span><span>난이도</span>
-                            <span>시간</span><span>힌트</span><span>점수</span><span>날짜</span>
-                        </div>
-                        ${rowsHtml}
-                    </div>
-                </div>
+    container.innerHTML = `
+        <div class="lb-table-wrap">
+            <div class="lb-header-row">
+                <span>순위</span><span>닉네임</span><span>난이도</span>
+                <span>시간</span><span>힌트</span><span>점수</span><span>날짜</span>
             </div>
-        `;
-    }).join('');
-}
-
-function toggleHofSeason(headerEl) {
-    const records = headerEl.nextElementSibling;
-    const icon    = headerEl.querySelector('.hof-toggle-icon');
-    const isOpen  = records.classList.toggle('open');
-    icon.textContent = isOpen ? '▲' : '▼';
+            ${rowsHtml}
+        </div>
+    `;
 }
 
 // ===================== 컨페티 =====================
@@ -1199,47 +1090,45 @@ function bindEvents() {
     // 다시시작 버튼
     document.getElementById('restart-btn').addEventListener('click', restartGame);
 
-    // Post-save 탭 전환
-    document.querySelectorAll('.ps-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderPostSaveTab(btn.dataset.pstab);
-        });
-    });
-
     // 완성 후 화면: 명예의 전당
     document.getElementById('ps-hof-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
         document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
-        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         showHofOverlay();
     });
-
-    // 기록 초기화
-    document.getElementById('clear-records-btn').addEventListener('click', () => {
-        if (confirm('현재 시즌 기록을 모두 삭제할까요?')) {
-            const season = getCurrentSeason();
-            localStorage.removeItem(getSeasonRecordsKey(season.id));
-            renderLeaderboard();
-        }
-    });
-
-    // 시즌 종료
-    document.getElementById('end-season-btn').addEventListener('click', endSeason);
-
-    // 리더보드 필터
-    document.getElementById('lb-filter').addEventListener('change', renderLeaderboard);
 
     // 명예의 전당 오버레이 닫기
     document.getElementById('hof-close-btn').addEventListener('click', hideHofOverlay);
 
-    // ── 관리자 비밀 접근: lb-title 5번 클릭 (3초 이내)
+    // 명예의 전당 탭 전환
+    document.querySelectorAll('.hof-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.hof-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const level = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
+            renderHofTab(btn.dataset.hoftab, level);
+        });
+    });
+
+    // 명예의 전당 레벨 필터
+    document.getElementById('hof-level-filter').addEventListener('change', renderHallOfFame);
+
+    // 명예의 전당 관리자 버튼
+    document.getElementById('hof-end-season-btn').addEventListener('click', endSeason);
+    document.getElementById('hof-clear-records-btn').addEventListener('click', () => {
+        if (confirm('현재 시즌 기록을 모두 삭제할까요?')) {
+            const season = getCurrentSeason();
+            localStorage.removeItem(getSeasonRecordsKey(season.id));
+            renderHallOfFame();
+        }
+    });
+
+    // ── 관리자 비밀 접근: hof-title 5번 클릭 (3초 이내)
     let adminClickCount = 0;
     let adminClickTimer = null;
-    document.getElementById('lb-title').addEventListener('click', () => {
+    document.getElementById('hof-title').addEventListener('click', () => {
         adminClickCount++;
         clearTimeout(adminClickTimer);
         adminClickTimer = setTimeout(() => { adminClickCount = 0; }, 3000);
@@ -1356,7 +1245,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateDifficultyDisplay(Game.difficulty);
     updateUndoRedoBtns();
-    renderLeaderboard();
 
     // 시작 화면 표시 (게임은 시작 화면에서 시작)
     showStartScreen();

@@ -152,52 +152,6 @@
         </div>
     </div>
 
-    <!-- 기록판 -->
-    <section class="leaderboard-section">
-        <div class="lb-header-row-title">
-            <h2 class="lb-title" id="lb-title">🏆 기록판</h2>
-        </div>
-
-        <!-- 현재 시즌 패널 -->
-        <div id="lb-current-panel">
-            <div class="lb-season-bar">
-                <span id="lb-season-name" class="lb-season-name">시즌 1</span>
-                <span id="lb-season-date" class="lb-season-date"></span>
-                <div class="lb-season-actions">
-                    <select id="lb-filter" class="lb-filter-select">
-                        <option value="all">전체</option>
-                        <option value="level-1">레벨 1 (입문)</option>
-                        <option value="level-2">레벨 2 (입문)</option>
-                        <option value="level-3">레벨 3 (쉬움)</option>
-                        <option value="level-4">레벨 4 (쉬움)</option>
-                        <option value="level-5">레벨 5 (보통)</option>
-                        <option value="level-6">레벨 6 (보통)</option>
-                        <option value="level-7">레벨 7 (어려움)</option>
-                        <option value="level-8">레벨 8 (어려움)</option>
-                        <option value="level-9">레벨 9 (전문가)</option>
-                        <option value="level-10">레벨 10 (전문가)</option>
-                    </select>
-                    <button id="end-season-btn" class="btn-text-danger admin-btn hidden">시즌 종료</button>
-                    <button id="clear-records-btn" class="btn-text-danger admin-btn hidden">기록 초기화</button>
-                </div>
-            </div>
-
-            <div class="lb-table-wrap">
-                <div class="lb-header-row">
-                    <span>순위</span>
-                    <span>닉네임</span>
-                    <span>난이도</span>
-                    <span>시간</span>
-                    <span>힌트</span>
-                    <span>점수</span>
-                    <span>날짜</span>
-                </div>
-                <div id="lb-entries"></div>
-            </div>
-        </div>
-
-        <p class="lb-note">* 점수 = 완성 시간 + 힌트 사용 횟수 × 60초 패널티 (낮을수록 좋음)</p>
-    </section>
 
 </div>
 
@@ -265,12 +219,7 @@
 
         <!-- 저장 후 표시되는 섹션 -->
         <div id="post-save-section" class="hidden post-save-section">
-            <div class="post-save-tabs">
-                <button class="ps-tab active" data-pstab="level">시즌·현재레벨</button>
-                <button class="ps-tab" data-pstab="all">시즌·전체레벨</button>
-                <button class="ps-tab" data-pstab="alltime">역대·현재레벨</button>
-            </div>
-            <div id="post-save-records" class="post-save-records"></div>
+            <p class="save-success-msg">✅ 기록이 저장됐어요!</p>
             <div class="post-save-actions">
                 <button id="ps-hof-btn" class="btn btn-secondary">🏆 명예의 전당 보기</button>
             </div>
@@ -283,12 +232,37 @@
 <div id="hof-overlay" class="fullscreen-overlay hidden hof-overlay">
     <div class="hof-card">
         <div class="hof-card-header">
-            <span>🏆 명예의 전당</span>
-            <button id="hof-close-btn" class="icon-btn" title="닫기">✕</button>
+            <span id="hof-title">🏆 명예의 전당</span>
+            <div class="hof-header-right">
+                <select id="hof-level-filter" class="lb-filter-select">
+                    <option value="1">Lv.1 (입문)</option>
+                    <option value="2">Lv.2 (입문)</option>
+                    <option value="3">Lv.3 (쉬움)</option>
+                    <option value="4">Lv.4 (쉬움)</option>
+                    <option value="5" selected>Lv.5 (보통)</option>
+                    <option value="6">Lv.6 (보통)</option>
+                    <option value="7">Lv.7 (어려움)</option>
+                    <option value="8">Lv.8 (어려움)</option>
+                    <option value="9">Lv.9 (전문가)</option>
+                    <option value="10">Lv.10 (전문가)</option>
+                </select>
+                <button id="hof-close-btn" class="icon-btn" title="닫기">✕</button>
+            </div>
+        </div>
+        <div class="hof-season-info-bar">
+            <span id="hof-season-label" class="lb-season-name"></span>
+            <div class="hof-admin-actions">
+                <button id="hof-end-season-btn" class="btn-text-danger admin-btn hidden">시즌 종료</button>
+                <button id="hof-clear-records-btn" class="btn-text-danger admin-btn hidden">기록 초기화</button>
+            </div>
+        </div>
+        <div class="hof-card-tabs">
+            <button class="hof-tab active" data-hoftab="level">시즌·현재레벨</button>
+            <button class="hof-tab" data-hoftab="all">시즌·전체레벨</button>
+            <button class="hof-tab" data-hoftab="alltime">역대·현재레벨</button>
         </div>
         <div class="hof-card-body">
-            <p class="hof-intro">🏅 시즌이 종료되면 기록이 여기에 보관됩니다</p>
-            <div id="hof-entries"></div>
+            <div id="hof-records"></div>
         </div>
     </div>
 </div>
