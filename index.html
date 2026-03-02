@@ -156,10 +156,6 @@
     <section class="leaderboard-section">
         <div class="lb-header-row-title">
             <h2 class="lb-title" id="lb-title">🏆 기록판</h2>
-            <div class="lb-tabs">
-                <button class="lb-tab active" data-tab="current">현재 시즌</button>
-                <button class="lb-tab" data-tab="hof">명예의 전당</button>
-            </div>
         </div>
 
         <!-- 현재 시즌 패널 -->
@@ -198,12 +194,6 @@
                 </div>
                 <div id="lb-entries"></div>
             </div>
-        </div>
-
-        <!-- 명예의 전당 패널 -->
-        <div id="lb-hof-panel" class="hidden">
-            <p class="hof-intro">🏅 시즌을 종료하면 기록이 여기에 보관됩니다</p>
-            <div id="hof-entries"></div>
         </div>
 
         <p class="lb-note">* 점수 = 완성 시간 + 힌트 사용 횟수 × 60초 패널티 (낮을수록 좋음)</p>
@@ -286,6 +276,20 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- 명예의 전당 오버레이 -->
+<div id="hof-overlay" class="fullscreen-overlay hidden hof-overlay">
+    <div class="hof-card">
+        <div class="hof-card-header">
+            <span>🏆 명예의 전당</span>
+            <button id="hof-close-btn" class="icon-btn" title="닫기">✕</button>
+        </div>
+        <div class="hof-card-body">
+            <p class="hof-intro">🏅 시즌이 종료되면 기록이 여기에 보관됩니다</p>
+            <div id="hof-entries"></div>
+        </div>
     </div>
 </div>
 

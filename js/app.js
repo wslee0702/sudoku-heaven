@@ -341,6 +341,15 @@ function showStartScreen() {
     document.getElementById('start-screen').classList.remove('hidden');
 }
 
+function showHofOverlay() {
+    renderHallOfFame();
+    document.getElementById('hof-overlay').classList.remove('hidden');
+}
+
+function hideHofOverlay() {
+    document.getElementById('hof-overlay').classList.add('hidden');
+}
+
 function hideStartScreen() {
     document.getElementById('start-screen').classList.add('hidden');
 }
@@ -966,14 +975,6 @@ function renderLeaderboard() {
     const season    = getCurrentSeason();
     const filterVal = document.getElementById('lb-filter').value;
 
-    // 시즌 탭 레이블에 월 표시 (예: 현재 시즌 (2026.Mar))
-    const tabEl = document.querySelector('.lb-tab[data-tab="current"]');
-    if (tabEl) {
-        const d = new Date();
-        const mon = d.toLocaleString('en-US', { month: 'short' });
-        tabEl.textContent = `현재 시즌 (${d.getFullYear()}.${mon})`;
-    }
-
     document.getElementById('lb-season-name').textContent = season.name;
     document.getElementById('lb-season-date').textContent =
         `시작: ${season.startDate} | 다음 자동 종료: ${season.autoEndDate || '-'}`;
@@ -1026,7 +1027,7 @@ function renderHallOfFame() {
             catch { return []; }
         })();
         records.sort((a, b) => a.score - b.score);
-        const top = records.slice(0, 10);
+        const top = records.slice(0, 1000);
 
         const rowsHtml = top.length === 0
             ? '<div class="lb-empty">기록 없음</div>'
@@ -1145,15 +1146,7 @@ function bindStartScreen() {
     });
 
     // 명예의 전당 바로가기
-    document.getElementById('start-hof-btn').addEventListener('click', () => {
-        hideStartScreen();
-        document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
-        document.querySelector('[data-tab="hof"]').classList.add('active');
-        document.getElementById('lb-current-panel').classList.add('hidden');
-        document.getElementById('lb-hof-panel').classList.remove('hidden');
-        renderHallOfFame();
-        document.querySelector('.leaderboard-section').scrollIntoView({ behavior: 'smooth' });
-    });
+    document.getElementById('start-hof-btn').addEventListener('click', showHofOverlay);
 }
 
 // ===================== 이벤트 바인딩 =====================
@@ -1222,13 +1215,7 @@ function bindEvents() {
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
         document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
-        // 명예의 전당 탭 활성화 후 스크롤
-        document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
-        document.querySelector('[data-tab="hof"]').classList.add('active');
-        document.getElementById('lb-current-panel').classList.add('hidden');
-        document.getElementById('lb-hof-panel').classList.remove('hidden');
-        renderHallOfFame();
-        document.querySelector('.leaderboard-section').scrollIntoView({ behavior: 'smooth' });
+        showHofOverlay();
     });
 
     // 기록 초기화
@@ -1246,17 +1233,8 @@ function bindEvents() {
     // 리더보드 필터
     document.getElementById('lb-filter').addEventListener('change', renderLeaderboard);
 
-    // 리더보드 탭
-    document.querySelectorAll('.lb-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const which = tab.dataset.tab;
-            document.getElementById('lb-current-panel').classList.toggle('hidden', which !== 'current');
-            document.getElementById('lb-hof-panel').classList.toggle('hidden', which !== 'hof');
-            if (which === 'hof') renderHallOfFame();
-        });
-    });
+    // 명예의 전당 오버레이 닫기
+    document.getElementById('hof-close-btn').addEventListener('click', hideHofOverlay);
 
     // ── 관리자 비밀 접근: lb-title 5번 클릭 (3초 이내)
     let adminClickCount = 0;

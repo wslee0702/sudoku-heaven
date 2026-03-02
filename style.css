@@ -691,7 +691,47 @@ body {
 }
 .lb-note { margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); }
 
-/* ===================== 명예의 전당 ===================== */
+/* ===================== 명예의 전당 오버레이 ===================== */
+.hof-overlay {
+    z-index: 310; /* 시작 화면(300) 위에 표시 */
+    align-items: center;
+    justify-content: center;
+}
+
+.hof-card {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.35);
+    max-width: 700px;
+    width: 92%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.hof-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.hof-card-header > span {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.hof-card-body {
+    overflow-y: auto;
+    flex: 1;
+    padding: 16px 28px 28px;
+}
+
+/* ===================== 명예의 전당 아코디언 ===================== */
 .hof-intro {
     text-align: center;
     color: var(--text-muted);
@@ -1017,6 +1057,12 @@ body {
 
     .lb-filter-select { font-size: 0.8rem; padding: 4px 8px; }
     .lb-season-actions { flex-wrap: wrap; gap: 6px; }
+
+    /* ── 명예의 전당 오버레이 */
+    .hof-card { max-height: 92vh; border-radius: 14px; }
+    .hof-card-header { padding: 14px 16px; }
+    .hof-card-header > span { font-size: 1.1rem; }
+    .hof-card-body { padding: 10px 12px 16px; }
 
     /* ── 완성 오버레이 */
     .overlay-box { padding: 24px 18px; gap: 12px; }
