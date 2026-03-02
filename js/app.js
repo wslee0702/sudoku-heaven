@@ -470,21 +470,17 @@ function inputNumber(num) {
 
     saveToHistory(); // 입력 전 상태 저장
 
-    if (Game.memoMode) {
-        if (num === 0) {
-            Game.memos[r][c].clear();
-        } else {
-            if (Game.memos[r][c].has(num)) Game.memos[r][c].delete(num);
-            else Game.memos[r][c].add(num);
-        }
+    if (num === 0) {
+        // 모드에 관계없이 숫자 + 메모 모두 지우기
+        Game.board[r][c] = 0;
+        Game.memos[r][c].clear();
+    } else if (Game.memoMode) {
+        if (Game.memos[r][c].has(num)) Game.memos[r][c].delete(num);
+        else Game.memos[r][c].add(num);
     } else {
-        if (num === 0) {
-            Game.board[r][c] = 0;
-        } else {
-            Game.board[r][c] = num;
-            Game.memos[r][c].clear();
-            clearRelatedMemos(r, c, num);
-        }
+        Game.board[r][c] = num;
+        Game.memos[r][c].clear();
+        clearRelatedMemos(r, c, num);
         checkLineCompletions();
         checkNumberCompletion(num);
         checkComplete();
@@ -887,8 +883,8 @@ function renderHallOfFame() {
     const level  = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
 
     const d   = new Date();
-    const mon = d.toLocaleString('en-US', { month: 'short' });
-    const seasonLabel = `${season.name} (${d.getFullYear()}.${mon}.)`;
+    const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+    const seasonLabel = `${season.name} (${d.getFullYear()} ${mon})`;
 
     document.getElementById('hof-season-label').textContent = seasonLabel;
 
@@ -1123,6 +1119,18 @@ function bindEvents() {
 
     // 명예의 전당 오버레이 닫기
     document.getElementById('hof-close-btn').addEventListener('click', hideHofOverlay);
+
+    // 명예의 전당 푸터: 같은 난이도 새 게임
+    document.getElementById('hof-same-level-btn').addEventListener('click', () => {
+        hideHofOverlay();
+        newGame(Game.difficulty);
+    });
+
+    // 명예의 전당 푸터: 홈
+    document.getElementById('hof-home-btn').addEventListener('click', () => {
+        hideHofOverlay();
+        showStartScreen();
+    });
 
     // 명예의 전당 탭 전환
     document.querySelectorAll('.hof-tab').forEach(btn => {

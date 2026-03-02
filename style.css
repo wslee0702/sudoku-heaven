@@ -784,6 +784,15 @@ body {
     padding: 12px 28px 24px;
 }
 
+.hof-card-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding: 12px 28px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
 /* 저장 성공 메시지 */
 .save-success-msg {
     font-size: 1rem;
@@ -1128,6 +1137,7 @@ body {
     .hof-card-tabs { padding: 8px 14px; gap: 4px; }
     .hof-tab { padding: 5px 8px; font-size: 0.72rem; }
     .hof-card-body { padding: 8px 10px 14px; }
+    .hof-card-footer { padding: 10px 14px 14px; gap: 8px; }
 
     /* ── 완성 오버레이 */
     .overlay-box { padding: 24px 18px; gap: 12px; }
