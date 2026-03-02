@@ -225,7 +225,7 @@ function triggerFlash(cells, isFinal = false) {
     }, duration);
 }
 
-// 완성된 줄/박스를 다시 계산 (undo 후 사용)
+// 완성된 줄/박스/숫자를 다시 계산 (undo 후 사용)
 function recomputeCompletedLines() {
     Game.completedLines = new Set();
     for (let r = 0; r < 9; r++) {
@@ -238,6 +238,19 @@ function recomputeCompletedLines() {
         for (let bc = 0; bc < 3; bc++) {
             if (isBoxComplete(br, bc)) Game.completedLines.add(`box-${br}-${bc}`);
         }
+    }
+    // 숫자별 완성 상태도 재계산
+    for (let num = 1; num <= 9; num++) {
+        let count = 0, allCorrect = true;
+        outer: for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (Game.board[r][c] === num) {
+                    if (Game.solution[r][c] !== num) { allCorrect = false; break outer; }
+                    count++;
+                }
+            }
+        }
+        if (allCorrect && count === 9) Game.completedLines.add(`num-${num}`);
     }
 }
 
@@ -301,6 +314,27 @@ function checkLineCompletions() {
     if (flashCells.size > 0) triggerFlash([...flashCells.values()]);
 }
 
+// 숫자 9개 모두 올바르게 입력됐을 때 플래시
+function checkNumberCompletion(num) {
+    if (num === 0) return;
+    const key = `num-${num}`;
+    if (Game.completedLines.has(key)) return;
+
+    const cells = [];
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (Game.board[r][c] === num) {
+                if (Game.solution[r][c] !== num) return; // 오답 포함 → 아직 아님
+                cells.push([r, c]);
+            }
+        }
+    }
+    if (cells.length === 9) {
+        Game.completedLines.add(key);
+        triggerFlash(cells);
+    }
+}
+
 // ===================== 게임 시작 / 다시하기 =====================
 
 function showStartScreen() {
@@ -317,9 +351,7 @@ function newGame(levelOverride) {
     hideStartScreen();
     stopConfetti();
 
-    const level = levelOverride !== undefined
-        ? levelOverride
-        : parseInt(document.getElementById('difficulty-slider').value);
+    const level = levelOverride !== undefined ? levelOverride : Game.difficulty;
 
     Game.difficulty = level;
     Game.completed  = false;
@@ -332,8 +364,6 @@ function newGame(levelOverride) {
     Game.completedLines = new Set();
     Game.selectedNum = 0;
 
-    // 인게임 슬라이더도 동기화
-    document.getElementById('difficulty-slider').value = level;
     updateDifficultyDisplay(level);
 
     updateMemoBtn();
@@ -441,6 +471,7 @@ function inputNumber(num) {
             Game.memos[r][c].clear();
         }
         checkLineCompletions();
+        checkNumberCompletion(num);
         checkComplete();
     }
 
@@ -545,6 +576,7 @@ function useHint() {
     updateHintBtn();
     renderBoard();
     checkLineCompletions();
+    checkNumberCompletion(Game.solution[targetR][targetC]);
     checkComplete();
 }
 
@@ -619,10 +651,8 @@ function showLoading(show) {
 
 function updateDifficultyDisplay(level) {
     const info  = SudokuEngine.getDifficultyInfo(level);
-    const clues = SudokuEngine.getClueCount(level);
-    document.getElementById('diff-name').textContent  = info.name;
-    document.getElementById('diff-level').textContent = `Lv.${level}`;
-    document.getElementById('diff-clues').textContent = `(주어진 숫자: ${clues}개)`;
+    const badge = document.getElementById('game-diff-badge');
+    if (badge) badge.textContent = `${info.name} Lv.${level}`;
 }
 
 // ===================== 시즌 관리 =====================
@@ -752,8 +782,39 @@ function saveRecord(name) {
     saveScoreOnline(record);
 
     renderLeaderboard();
-    document.getElementById('celebration-overlay').classList.add('hidden');
+
+    // 저장 후: save-section 숨기고 post-save-section 표시
+    document.querySelector('.save-section').style.display = 'none';
+    const postSave = document.getElementById('post-save-section');
+    postSave.classList.remove('hidden');
+
+    // 같은 난이도 TOP 5 보여주기
+    const sameLevelTop = records
+        .filter(r => r.difficulty === Game.difficulty)
+        .slice(0, 5);
+    renderPostSaveRecords(sameLevelTop);
+
     stopConfetti();
+}
+
+function renderPostSaveRecords(records) {
+    const container = document.getElementById('post-save-records');
+    if (records.length === 0) {
+        container.innerHTML = '<div style="padding:12px;text-align:center;color:#64748B;font-size:0.85rem">아직 기록이 없어요!</div>';
+        return;
+    }
+    container.innerHTML = records.map((r, i) => {
+        const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
+        return `
+            <div class="post-save-row">
+                <span class="post-rank">${icon}</span>
+                <span class="post-name">${r.name}</span>
+                <span class="post-score">${formatTime(r.timeSeconds)}</span>
+                <span class="post-hints">${r.hintsUsed}힌트</span>
+                <span class="post-pts">${r.score}초</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -835,44 +896,6 @@ function renderLeaderboard() {
                 <span>${r.hintsUsed}개</span>
                 <span class="lb-score">${r.score}초</span>
                 <span class="lb-date">${r.date}</span>
-            </div>
-        `;
-    }).join('');
-}
-
-// ===================== 전 세계 기록 렌더링 =====================
-
-async function renderGlobalLeaderboard() {
-    const container = document.getElementById('lb-global-entries');
-    container.innerHTML = '<div class="lb-empty lb-loading">🌐 전 세계 기록 불러오는 중...</div>';
-
-    const filterVal = document.getElementById('lb-global-filter').value;
-    const level     = filterVal === 'all' ? null : parseInt(filterVal);
-
-    const scores = await loadGlobalScores({ level });
-
-    if (scores === null) {
-        container.innerHTML = '<div class="lb-empty">⚠️ 인터넷에 연결되어 있는지 확인해주세요</div>';
-        return;
-    }
-    if (scores.length === 0) {
-        container.innerHTML = '<div class="lb-empty">아직 기록이 없어요. 첫 번째 주인공이 되어보세요! 🏆</div>';
-        return;
-    }
-
-    container.innerHTML = scores.map((r, i) => {
-        const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-        const rankIcon  = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
-        const date      = new Date(r.created_at).toLocaleDateString('ko-KR');
-        return `
-            <div class="lb-entry-row">
-                <span class="lb-rank ${rankClass}">${rankIcon}</span>
-                <span class="lb-name">${escapeHtml(r.player_name)}</span>
-                <span>${r.diff_name} Lv.${r.difficulty}</span>
-                <span class="lb-time">${formatTime(r.time_seconds)}</span>
-                <span>${r.hints_used}개</span>
-                <span class="lb-score">${r.score}초</span>
-                <span class="lb-date">${date}</span>
             </div>
         `;
     }).join('');
@@ -1005,53 +1028,22 @@ function stopConfetti() {
 // ===================== 시작 화면 이벤트 =====================
 
 function bindStartScreen() {
-    const startSlider = document.getElementById('start-slider');
-    const startLabel  = document.getElementById('start-level-label');
-
-    // 티어 버튼 클릭
-    document.querySelectorAll('.tier-btn').forEach(btn => {
+    // 레벨 버튼 클릭 → 바로 게임 시작
+    document.querySelectorAll('.level-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const def = parseInt(btn.dataset.default);
-            startSlider.min = btn.dataset.min;
-            startSlider.max = btn.dataset.max;
-            startSlider.value = def;
-            const info = SudokuEngine.getDifficultyInfo(def);
-            startLabel.textContent = `${info.name} Lv.${def}`;
+            const lv = parseInt(btn.dataset.level);
+            newGame(lv);
         });
-    });
-
-    // 세부 슬라이더
-    startSlider.addEventListener('input', () => {
-        const lv   = parseInt(startSlider.value);
-        const info = SudokuEngine.getDifficultyInfo(lv);
-        startLabel.textContent = `${info.name} Lv.${lv}`;
-
-        // 티어 버튼 자동 동기화
-        document.querySelectorAll('.tier-btn').forEach(btn => {
-            const min = parseInt(btn.dataset.min);
-            const max = parseInt(btn.dataset.max);
-            btn.classList.toggle('active', lv >= min && lv <= max);
-        });
-    });
-
-    // 게임 시작 버튼
-    document.getElementById('start-game-btn').addEventListener('click', () => {
-        const lv = parseInt(startSlider.value);
-        newGame(lv);
     });
 
     // 명예의 전당 바로가기
     document.getElementById('start-hof-btn').addEventListener('click', () => {
         hideStartScreen();
-        // HOF 탭 활성화
         document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
         document.querySelector('[data-tab="hof"]').classList.add('active');
         document.getElementById('lb-current-panel').classList.add('hidden');
         document.getElementById('lb-hof-panel').classList.remove('hidden');
         renderHallOfFame();
-        // 기록판으로 스크롤
         document.querySelector('.leaderboard-section').scrollIntoView({ behavior: 'smooth' });
     });
 }
@@ -1059,16 +1051,13 @@ function bindStartScreen() {
 // ===================== 이벤트 바인딩 =====================
 
 function bindEvents() {
-    // 새 게임 → 시작 화면으로
-    document.getElementById('new-game-btn').addEventListener('click', showStartScreen);
-
-    // 다시하기
-    document.getElementById('restart-btn').addEventListener('click', restartGame);
-
-    // 인게임 난이도 슬라이더
-    document.getElementById('difficulty-slider').addEventListener('input', e => {
-        updateDifficultyDisplay(parseInt(e.target.value));
+    // 게임 액션 바: 같은 난이도 새 게임
+    document.getElementById('same-level-btn').addEventListener('click', () => {
+        newGame(Game.difficulty);
     });
+
+    // 게임 액션 바: 홈 (시작 화면으로)
+    document.getElementById('home-btn').addEventListener('click', showStartScreen);
 
     // 일시정지
     document.getElementById('pause-btn').addEventListener('click', () => {
@@ -1106,10 +1095,19 @@ function bindEvents() {
         if (e.key === 'Enter') saveRecord(document.getElementById('player-name').value);
     });
 
-    // 새 게임 (축하 화면 → 시작 화면)
-    document.getElementById('new-game-after-btn').addEventListener('click', () => {
+    // 완성 후 화면: 같은 난이도 새 게임
+    document.getElementById('same-diff-new-game-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
-        stopConfetti();
+        document.querySelector('.save-section').style.display = '';
+        document.getElementById('post-save-section').classList.add('hidden');
+        newGame(Game.difficulty);
+    });
+
+    // 완성 후 화면: 다른 난이도 선택
+    document.getElementById('diff-select-btn').addEventListener('click', () => {
+        document.getElementById('celebration-overlay').classList.add('hidden');
+        document.querySelector('.save-section').style.display = '';
+        document.getElementById('post-save-section').classList.add('hidden');
         showStartScreen();
     });
 
@@ -1135,16 +1133,25 @@ function bindEvents() {
             tab.classList.add('active');
             const which = tab.dataset.tab;
             document.getElementById('lb-current-panel').classList.toggle('hidden', which !== 'current');
-            document.getElementById('lb-global-panel').classList.toggle('hidden', which !== 'global');
             document.getElementById('lb-hof-panel').classList.toggle('hidden', which !== 'hof');
-            if (which === 'hof')    renderHallOfFame();
-            if (which === 'global') renderGlobalLeaderboard();
+            if (which === 'hof') renderHallOfFame();
         });
     });
 
-    // 전 세계 기록 필터 + 새로고침
-    document.getElementById('lb-global-filter').addEventListener('change', renderGlobalLeaderboard);
-    document.getElementById('lb-global-refresh').addEventListener('click', renderGlobalLeaderboard);
+    // ── 관리자 비밀 접근: lb-title 5번 클릭 (3초 이내)
+    let adminClickCount = 0;
+    let adminClickTimer = null;
+    document.getElementById('lb-title').addEventListener('click', () => {
+        adminClickCount++;
+        clearTimeout(adminClickTimer);
+        adminClickTimer = setTimeout(() => { adminClickCount = 0; }, 3000);
+        if (adminClickCount >= 5) {
+            adminClickCount = 0;
+            const btns = document.querySelectorAll('.admin-btn');
+            const isHidden = btns[0].classList.contains('hidden');
+            btns.forEach(btn => btn.classList.toggle('hidden', !isHidden));
+        }
+    });
 
     // ── 키보드
     document.addEventListener('keydown', e => {

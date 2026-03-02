@@ -14,43 +14,50 @@
         <div class="start-logo">
             <span class="heaven-title">Sudoku Heaven</span>
         </div>
-        <p class="start-subtitle">난이도를 선택하세요</p>
+        <p class="start-subtitle">레벨을 선택하면 바로 시작됩니다</p>
 
-        <div class="tier-grid">
-            <button class="tier-btn" data-min="1" data-max="2" data-default="1">
-                <span class="tier-stars">⭐</span>
-                <span class="tier-name">입문</span>
-                <span class="tier-range">Lv.1–2</span>
+        <div class="level-btn-grid">
+            <button class="level-btn" data-level="1">
+                <span class="lbtn-name">입문</span>
+                <span class="lbtn-lv">Lv.1</span>
             </button>
-            <button class="tier-btn" data-min="3" data-max="4" data-default="3">
-                <span class="tier-stars">⭐⭐</span>
-                <span class="tier-name">쉬움</span>
-                <span class="tier-range">Lv.3–4</span>
+            <button class="level-btn" data-level="2">
+                <span class="lbtn-name">입문</span>
+                <span class="lbtn-lv">Lv.2</span>
             </button>
-            <button class="tier-btn active" data-min="5" data-max="6" data-default="5">
-                <span class="tier-stars">⭐⭐⭐</span>
-                <span class="tier-name">보통</span>
-                <span class="tier-range">Lv.5–6</span>
+            <button class="level-btn" data-level="3">
+                <span class="lbtn-name">쉬움</span>
+                <span class="lbtn-lv">Lv.3</span>
             </button>
-            <button class="tier-btn" data-min="7" data-max="8" data-default="7">
-                <span class="tier-stars">⭐⭐⭐⭐</span>
-                <span class="tier-name">어려움</span>
-                <span class="tier-range">Lv.7–8</span>
+            <button class="level-btn" data-level="4">
+                <span class="lbtn-name">쉬움</span>
+                <span class="lbtn-lv">Lv.4</span>
             </button>
-            <button class="tier-btn" data-min="9" data-max="10" data-default="9">
-                <span class="tier-stars">⭐⭐⭐⭐⭐</span>
-                <span class="tier-name">전문가</span>
-                <span class="tier-range">Lv.9–10</span>
+            <button class="level-btn" data-level="5">
+                <span class="lbtn-name">보통</span>
+                <span class="lbtn-lv">Lv.5</span>
+            </button>
+            <button class="level-btn" data-level="6">
+                <span class="lbtn-name">보통</span>
+                <span class="lbtn-lv">Lv.6</span>
+            </button>
+            <button class="level-btn" data-level="7">
+                <span class="lbtn-name">어려움</span>
+                <span class="lbtn-lv">Lv.7</span>
+            </button>
+            <button class="level-btn" data-level="8">
+                <span class="lbtn-name">어려움</span>
+                <span class="lbtn-lv">Lv.8</span>
+            </button>
+            <button class="level-btn" data-level="9">
+                <span class="lbtn-name">전문가</span>
+                <span class="lbtn-lv">Lv.9</span>
+            </button>
+            <button class="level-btn" data-level="10">
+                <span class="lbtn-name">전문가</span>
+                <span class="lbtn-lv">Lv.10</span>
             </button>
         </div>
-
-        <div class="start-fine-tune">
-            <span class="fine-tune-label">세부 조정</span>
-            <input type="range" id="start-slider" min="1" max="10" value="5" class="diff-slider">
-            <span id="start-level-label" class="start-level-badge">보통 Lv.5</span>
-        </div>
-
-        <button id="start-game-btn" class="btn btn-primary btn-xl">게임 시작 ▶</button>
 
         <button id="start-hof-btn" class="btn-link">🏆 명예의 전당 보기</button>
     </div>
@@ -63,6 +70,7 @@
     <header class="header">
         <div class="logo">
             <span class="heaven-title-sm">Sudoku Heaven</span>
+            <span id="game-diff-badge" class="game-diff-badge"></span>
         </div>
         <div class="header-center">
             <button id="undo-btn" class="icon-btn" title="되돌리기 (Ctrl+Z)">↩</button>
@@ -76,27 +84,10 @@
         </div>
     </header>
 
-    <!-- 난이도 및 상단 버튼 -->
-    <div class="top-controls">
-        <div class="difficulty-section">
-            <div class="difficulty-labels">
-                <span class="diff-tier-label">입문</span>
-                <span class="diff-tier-label">쉬움</span>
-                <span class="diff-tier-label">보통</span>
-                <span class="diff-tier-label">어려움</span>
-                <span class="diff-tier-label">전문가</span>
-            </div>
-            <input type="range" id="difficulty-slider" min="1" max="10" value="5" class="diff-slider">
-            <div class="difficulty-badge">
-                <span id="diff-name">보통</span>
-                <span id="diff-level" class="diff-lv">Lv.5</span>
-                <span id="diff-clues" class="diff-clues"></span>
-            </div>
-        </div>
-        <div class="game-buttons">
-            <button id="new-game-btn" class="btn btn-primary">새 게임</button>
-            <button id="restart-btn" class="btn btn-secondary">다시하기</button>
-        </div>
+    <!-- 게임 액션 버튼 -->
+    <div class="game-actions">
+        <button id="same-level-btn" class="btn btn-secondary btn-sm">↺ 같은 난이도 새 게임</button>
+        <button id="home-btn" class="btn btn-secondary btn-sm">🏠 홈</button>
     </div>
 
     <!-- 메인 게임 영역 -->
@@ -163,10 +154,9 @@
     <!-- 기록판 -->
     <section class="leaderboard-section">
         <div class="lb-header-row-title">
-            <h2 class="lb-title">🏆 기록판</h2>
+            <h2 class="lb-title" id="lb-title">🏆 기록판</h2>
             <div class="lb-tabs">
                 <button class="lb-tab active" data-tab="current">현재 시즌</button>
-                <button class="lb-tab" data-tab="global">🌍 전 세계</button>
                 <button class="lb-tab" data-tab="hof">명예의 전당</button>
             </div>
         </div>
@@ -190,8 +180,8 @@
                         <option value="level-9">레벨 9 (전문가)</option>
                         <option value="level-10">레벨 10 (전문가)</option>
                     </select>
-                    <button id="end-season-btn" class="btn-text-danger">시즌 종료</button>
-                    <button id="clear-records-btn" class="btn-text-danger">기록 초기화</button>
+                    <button id="end-season-btn" class="btn-text-danger admin-btn hidden">시즌 종료</button>
+                    <button id="clear-records-btn" class="btn-text-danger admin-btn hidden">기록 초기화</button>
                 </div>
             </div>
 
@@ -206,41 +196,6 @@
                     <span>날짜</span>
                 </div>
                 <div id="lb-entries"></div>
-            </div>
-        </div>
-
-        <!-- 전 세계 기록 패널 -->
-        <div id="lb-global-panel" class="hidden">
-            <div class="lb-season-bar">
-                <span class="lb-season-name">🌍 전 세계 TOP 50</span>
-                <div class="lb-season-actions">
-                    <select id="lb-global-filter" class="lb-filter-select">
-                        <option value="all">전체</option>
-                        <option value="1">레벨 1 (입문)</option>
-                        <option value="2">레벨 2 (입문)</option>
-                        <option value="3">레벨 3 (쉬움)</option>
-                        <option value="4">레벨 4 (쉬움)</option>
-                        <option value="5">레벨 5 (보통)</option>
-                        <option value="6">레벨 6 (보통)</option>
-                        <option value="7">레벨 7 (어려움)</option>
-                        <option value="8">레벨 8 (어려움)</option>
-                        <option value="9">레벨 9 (전문가)</option>
-                        <option value="10">레벨 10 (전문가)</option>
-                    </select>
-                    <button id="lb-global-refresh" class="btn btn-secondary">↻ 새로고침</button>
-                </div>
-            </div>
-            <div class="lb-table-wrap">
-                <div class="lb-header-row">
-                    <span>순위</span>
-                    <span>닉네임</span>
-                    <span>난이도</span>
-                    <span>시간</span>
-                    <span>힌트</span>
-                    <span>점수</span>
-                    <span>날짜</span>
-                </div>
-                <div id="lb-global-entries"></div>
             </div>
         </div>
 
@@ -314,7 +269,16 @@
             </div>
         </div>
 
-        <button id="new-game-after-btn" class="btn btn-secondary">새 게임 시작</button>
+        <!-- 저장 후 표시되는 섹션 -->
+        <div id="post-save-section" class="hidden post-save-section">
+            <h3 class="post-save-title">📊 같은 난이도 현재 시즌 기록</h3>
+            <div id="post-save-records" class="post-save-records"></div>
+            <div class="post-save-actions">
+                <button id="same-diff-new-game-btn" class="btn btn-primary">↺ 같은 난이도 새 게임</button>
+                <button id="diff-select-btn" class="btn btn-secondary">🏠 다른 난이도 선택</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
