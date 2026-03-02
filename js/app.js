@@ -908,6 +908,12 @@ function showCelebration() {
     if (pctMsg) { pctEl.textContent = pctMsg; pctEl.classList.remove('hidden'); }
     else         { pctEl.classList.add('hidden'); }
 
+    // 이전 게임의 post-save 상태 초기화 (닉네임 입력 화면이 항상 먼저 보이도록)
+    document.querySelector('.celeb-main-info').style.display = '';
+    document.querySelector('.save-section').style.display = '';
+    document.getElementById('post-save-section').classList.add('hidden');
+    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+
     document.getElementById('player-name').value = '';
     document.getElementById('celebration-overlay').classList.remove('hidden');
     launchConfetti();
