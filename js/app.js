@@ -830,11 +830,15 @@ function showPostSaveLeaderboard(record, currentSeasonRecords) {
         alltime: { records: alltimeRecs.slice(0, 10), idx: atIdx },
     };
 
-    // 탭 레이블 업데이트
+    // 탭 레이블 업데이트 (시즌명 + 연월 표시)
+    const _d = new Date();
+    const _mon = _d.toLocaleString('en-US', { month: 'short' });
+    const seasonLabel = `${season.name} (${_d.getFullYear()}.${_mon}.)`;
+
     document.querySelectorAll('.ps-tab').forEach(btn => {
         const t = btn.dataset.pstab;
-        if (t === 'level')   btn.textContent = `${season.name} · Lv.${Game.difficulty}`;
-        if (t === 'all')     btn.textContent = `${season.name} · 전체`;
+        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${Game.difficulty}`;
+        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
         if (t === 'alltime') btn.textContent = `역대 · Lv.${Game.difficulty}`;
     });
 
