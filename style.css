@@ -1,0 +1,970 @@
+/* ===================== 기본 설정 ===================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --primary:        #2563EB;
+    --primary-dark:   #1D4ED8;
+    --primary-light:  #EFF6FF;
+    --bg:             #F1F5F9;
+    --surface:        #FFFFFF;
+    --border:         #CBD5E1;
+    --border-strong:  #1E293B;
+    --text:           #1E293B;
+    --text-muted:     #64748B;
+
+    /* 셀 색상 */
+    --cell-selected:    #BFDBFE;
+    --cell-highlight:   #EFF6FF;
+    --cell-same-num:    #DBEAFE;
+    --cell-numpad-match: #93C5FD;   /* 키패드 선택 숫자 하이라이트 (더 진함) */
+    --cell-given-text:  #1E293B;
+    --cell-user-text:   #2563EB;
+    --cell-hint-text:   #16A34A;
+    --cell-hint-bg:     #DCFCE7;
+    --cell-error-text:  #DC2626;
+    --cell-error-bg:    #FEE2E2;
+    --memo-color:       #94A3B8;
+
+    --radius:    10px;
+    --radius-sm: 6px;
+    --shadow:    0 2px 8px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+                 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+/* ===================== 시작 화면 ===================== */
+.fullscreen-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+}
+.fullscreen-overlay.hidden { display: none; }
+
+.start-card {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.3);
+    max-width: 520px;
+    width: 92%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.start-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+/* ── Sudoku Heaven 타이틀 (시작 화면 대형) */
+.heaven-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 80%, #F59E0B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 8px rgba(139,92,246,0.35));
+    line-height: 1.15;
+}
+
+/* ── Sudoku Heaven 타이틀 (헤더 소형) */
+.heaven-title-sm {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 40%, #EC4899 80%, #F59E0B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.start-subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-top: -8px;
+}
+
+/* 5개 난이도 티어 버튼 */
+.tier-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+.tier-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+    min-width: 72px;
+}
+.tier-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+.tier-btn.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+}
+.tier-stars {
+    font-size: 0.7rem;
+    letter-spacing: -2px;
+}
+.tier-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.tier-range {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* 세부 조정 슬라이더 */
+.start-fine-tune {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+}
+.fine-tune-label {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.start-level-badge {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.btn-xl {
+    padding: 14px 48px;
+    font-size: 1.1rem;
+    border-radius: var(--radius);
+    width: 100%;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    cursor: pointer;
+    padding: 4px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.btn-link:hover { color: var(--primary); }
+
+/* ===================== 레이아웃 ===================== */
+#app {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* ===================== 헤더 ===================== */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+}
+
+.logo {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+.logo-kanji {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.logo-korean {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+/* 시작화면 배경에 맞는 헤더 그라디언트 - 밝은 배경에 잘 보이게 */
+
+.header-center {
+    display: flex;
+    gap: 4px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.timer-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    padding: 6px 14px;
+    border-radius: 30px;
+    border: 2px solid var(--border);
+}
+
+#timer-display {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    color: var(--text);
+    min-width: 60px;
+    text-align: center;
+}
+
+.icon-btn {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    line-height: 1;
+    transition: all 0.15s;
+    color: var(--text);
+}
+.icon-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ===================== 상단 컨트롤 ===================== */
+.top-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.difficulty-section { flex: 1; min-width: 220px; }
+
+.difficulty-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.diff-tier-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    flex: 1;
+}
+
+.diff-slider {
+    width: 100%;
+    accent-color: var(--primary);
+    height: 6px;
+    cursor: pointer;
+}
+
+.difficulty-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+#diff-name { font-weight: 700; font-size: 1rem; color: var(--primary); }
+.diff-lv {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+.diff-clues { font-size: 0.75rem; color: var(--text-muted); }
+
+.game-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ===================== 버튼 스타일 ===================== */
+.btn {
+    padding: 9px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+
+.btn-hint {
+    width: 100%;
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1.5px solid #FDE68A;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-hint:hover { background: #FDE68A; }
+.btn-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-large { padding: 12px 32px; font-size: 1rem; }
+
+.btn-text-danger {
+    background: none;
+    border: none;
+    color: #DC2626;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+.btn-text-danger:hover { background: #FEE2E2; }
+
+/* ===================== 메인 게임 영역 ===================== */
+.main-area {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+/* ===================== 수도쿠 보드 ===================== */
+.board-wrap {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    flex-shrink: 0;
+}
+
+.sudoku-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 450px;
+    height: 450px;
+    border: 3px solid var(--border-strong);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 수도쿠 셀 */
+.sudoku-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #B0BEC5;
+    cursor: pointer;
+    font-size: 1.35rem;
+    font-weight: 500;
+    position: relative;
+    user-select: none;
+    transition: background-color 0.1s;
+    background: var(--surface);
+    color: var(--cell-given-text);
+    overflow: hidden; /* ::after 오버레이를 위해 */
+    touch-action: manipulation;          /* 300ms 탭 지연 제거 */
+    -webkit-tap-highlight-color: transparent; /* iOS 탭 하이라이트 제거 */
+}
+
+/* 3x3 박스 구분선 */
+.sudoku-cell.thick-right  { border-right: 2.5px solid var(--border-strong); }
+.sudoku-cell.thick-bottom { border-bottom: 2.5px solid var(--border-strong); }
+
+/* 셀 상태별 스타일 */
+.sudoku-cell.user-input  { color: var(--cell-user-text); }
+.sudoku-cell.hinted      { color: var(--cell-hint-text); background: var(--cell-hint-bg); }
+.sudoku-cell.error       { color: var(--cell-error-text); background: var(--cell-error-bg); }
+.sudoku-cell.selected    { background: var(--cell-selected) !important; }
+.sudoku-cell.highlight   { background: var(--cell-highlight); }
+.sudoku-cell.same-number { background: var(--cell-same-num); }
+
+/* 키패드 선택된 숫자와 일치하는 셀 */
+.sudoku-cell.numpad-match {
+    background: var(--cell-numpad-match);
+    font-weight: 700;
+}
+
+/* ===================== 줄/박스 완성 플래시 애니메이션 ===================== */
+@keyframes flash-green {
+    0%   { opacity: 0.85; }
+    40%  { opacity: 0.6; }
+    100% { opacity: 0; }
+}
+@keyframes flash-gold {
+    0%   { opacity: 0.9; }
+    30%  { opacity: 0.7; }
+    100% { opacity: 0; }
+}
+
+/* ::after 오버레이를 이용해 셀 배경을 방해하지 않고 번쩍임 */
+.sudoku-cell.cell-flash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #4ADE80;   /* 초록 */
+    animation: flash-green 0.9s ease-out forwards;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sudoku-cell.cell-flash-final::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #FBBF24;   /* 골드 */
+    animation: flash-gold 1.2s ease-out forwards;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 메모 그리드 */
+.memo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+    position: relative;
+    z-index: 2; /* flash overlay 위에 표시 */
+}
+.memo-num {
+    font-size: 0.5rem;
+    color: var(--memo-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* ===================== 오른쪽 패널 ===================== */
+.side-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    min-width: 180px;
+}
+
+.panel-toggles { display: flex; flex-direction: column; gap: 8px; }
+
+.toggle-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+}
+.toggle-pill:hover { border-color: var(--primary); }
+.toggle-pill.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.toggle-pill-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.toggle-pill-label:hover { border-color: var(--primary); }
+.toggle-pill-label input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+/* 숫자 패드 */
+.number-pad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.num-btn {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.num-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.05);
+}
+.num-btn:active { transform: scale(0.95); }
+
+/* 키패드 활성 상태 (selectedNum과 일치) */
+.num-btn.num-active {
+    background: var(--primary);
+    border-color: var(--primary-dark);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+}
+
+.erase-btn { font-size: 1rem; color: #DC2626; border-color: #FECACA; background: #FFF5F5; }
+.erase-btn:hover { background: #FEE2E2; border-color: #DC2626; color: #DC2626; }
+
+/* 키보드 도움말 */
+.keyboard-help {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+.keyboard-help p { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.keyboard-help ul { list-style: none; padding: 0; }
+.keyboard-help li { font-size: 0.75rem; color: var(--text-muted); padding: 1px 0; }
+
+/* ===================== 기록판 ===================== */
+.leaderboard-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.lb-header-row-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.lb-title { font-size: 1.2rem; font-weight: 700; }
+
+/* 탭 */
+.lb-tabs { display: flex; gap: 4px; }
+.lb-tab {
+    padding: 6px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    background: var(--bg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+}
+.lb-tab:hover { border-color: var(--primary); color: var(--primary); }
+.lb-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* 시즌 바 */
+.lb-season-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.lb-season-name {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+.lb-season-date { font-size: 0.78rem; color: var(--text-muted); flex: 1; }
+.lb-season-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.lb-filter-select {
+    padding: 6px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    background: var(--bg);
+    cursor: pointer;
+}
+
+/* 기록 테이블 */
+.lb-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.lb-header-row,
+.lb-entry-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 90px 75px 55px 75px 90px;
+    padding: 10px 14px;
+    gap: 8px;
+    font-size: 0.85rem;
+    align-items: center;
+}
+.lb-header-row {
+    background: var(--bg);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.lb-entry-row { border-top: 1px solid var(--border); background: var(--surface); }
+.lb-entry-row:hover { background: var(--bg); }
+
+.lb-rank { font-weight: 700; color: var(--text-muted); }
+.lb-rank.gold   { color: #D97706; }
+.lb-rank.silver { color: #6B7280; }
+.lb-rank.bronze { color: #92400E; }
+
+.lb-name  { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.lb-time  { font-variant-numeric: tabular-nums; font-family: monospace; }
+.lb-score { font-weight: 700; color: var(--primary); }
+
+.lb-empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+.lb-loading {
+    animation: pulse-text 1.2s ease-in-out infinite;
+}
+@keyframes pulse-text {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+.lb-note { margin-top: 10px; font-size: 0.75rem; color: var(--text-muted); }
+
+/* ===================== 명예의 전당 ===================== */
+.hof-intro {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 16px 0 8px;
+}
+
+.hof-season-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.hof-season-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg);
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.15s;
+}
+.hof-season-header:hover { background: var(--border); }
+
+.hof-season-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.hof-toggle-icon { font-size: 0.8rem; color: var(--text-muted); }
+
+.hof-season-records {
+    display: none;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+}
+.hof-season-records.open { display: block; }
+
+/* ===================== 오버레이 ===================== */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(3px);
+}
+.overlay.hidden { display: none; }
+
+.overlay-box {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    max-width: 460px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.overlay-icon { font-size: 3rem; }
+.overlay-box h2 { font-size: 1.5rem; }
+.overlay-msg { color: var(--text-muted); line-height: 1.7; }
+
+/* 로딩 스피너 */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===================== 축하 화면 ===================== */
+.celebration-box { max-width: 500px; }
+
+.celeb-header { display: flex; align-items: center; gap: 12px; }
+.celeb-emoji { font-size: 2rem; }
+.celeb-header h2 { font-size: 2rem; font-weight: 800; }
+
+.celeb-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+.stat-item {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+}
+.stat-label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value { display: block; font-size: 1.2rem; font-weight: 700; }
+.score-highlight { color: var(--primary); font-size: 1.4rem; }
+
+.percentile-msg {
+    background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+    border: 1.5px solid #93C5FD;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    width: 100%;
+    text-align: center;
+}
+.percentile-msg.hidden { display: none; }
+
+.save-section { width: 100%; }
+.save-label { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px; text-align: center; }
+.save-row { display: flex; gap: 8px; }
+.name-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.name-input:focus { border-color: var(--primary); }
+
+/* ===================== 컨페티 캔버스 ===================== */
+#confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+}
+
+/* ===================== 반응형 (모바일) ===================== */
+@media (max-width: 620px) {
+
+    /* ── 기본 레이아웃 */
+    #app {
+        padding: 8px;
+        /* 아이폰 홈바/노치 영역 자동 확보 */
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
+        padding-left:   max(8px, env(safe-area-inset-left));
+        padding-right:  max(8px, env(safe-area-inset-right));
+    }
+
+    /* ── 헤더: 더 컴팩트하게 */
+    .header { padding: 8px 12px; margin-bottom: 8px; }
+    .heaven-title-sm { font-size: 1.2rem; }
+    #timer-display { font-size: 1.1rem; min-width: 48px; letter-spacing: 1px; }
+    .timer-wrap { padding: 5px 10px; }
+
+    /* ── 상단 컨트롤: 세로 정렬 */
+    .top-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+    }
+    .difficulty-section { min-width: unset; }
+    .game-buttons { justify-content: stretch; }
+    .game-buttons .btn { flex: 1; }
+
+    /* ── 메인 영역 */
+    .main-area {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    /* ── 수도쿠 보드: 화면 너비에 딱 맞게 */
+    .board-wrap { padding: 4px; display: flex; justify-content: center; }
+    .sudoku-board {
+        width: calc(100vw - 24px);
+        height: calc(100vw - 24px);
+        max-width: 440px;
+        max-height: 440px;
+    }
+    .sudoku-cell { font-size: 1.15rem; }
+    .memo-num { font-size: 0.55rem; }
+
+    /* ── 사이드 패널: 세로 정렬로 깔끔하게 */
+    .side-panel {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        min-width: unset;
+    }
+
+    /* 메모·오답 토글: 가로 한 줄 */
+    .panel-toggles { flex-direction: row; gap: 8px; }
+    .toggle-pill       { flex: 1; }
+    .toggle-pill-label { flex: 1; }
+
+    /* 숫자 패드: 더 큰 터치 타깃 */
+    .number-pad { gap: 6px; }
+    .num-btn { min-height: 54px; font-size: 1.35rem; }
+    .erase-btn { font-size: 0.95rem; }
+
+    /* 키보드 단축키 안내: 모바일엔 불필요 → 숨김 */
+    .keyboard-help { display: none; }
+
+    /* ── 시작 화면 */
+    .start-card { padding: 24px 18px; gap: 14px; }
+    .heaven-title { font-size: 2rem; }
+    .start-subtitle { font-size: 0.88rem; }
+    .tier-btn { min-width: 56px; padding: 10px 6px; }
+    .tier-stars { letter-spacing: -3px; }
+    .start-fine-tune { padding: 8px 12px; }
+    .btn-xl { padding: 13px 24px; }
+
+    /* ── 리더보드 */
+    .leaderboard-section { padding: 14px 12px; }
+    .lb-header-row,
+    .lb-entry-row {
+        grid-template-columns: 36px 1fr 68px 58px 44px;
+        font-size: 0.78rem;
+        padding: 8px 10px;
+    }
+    /* 점수·날짜 열 숨김 (화면이 좁을 때) */
+    .lb-header-row span:nth-child(6),
+    .lb-header-row span:nth-child(7),
+    .lb-entry-row .lb-score,
+    .lb-entry-row .lb-date { display: none; }
+
+    .lb-filter-select { font-size: 0.8rem; padding: 4px 8px; }
+    .lb-season-actions { flex-wrap: wrap; gap: 6px; }
+
+    /* ── 완성 오버레이 */
+    .overlay-box { padding: 24px 18px; gap: 12px; }
+    .celebration-box { padding: 24px 18px; }
+    .celeb-stats { gap: 8px; }
+    .stat-item { padding: 10px 8px; }
+    .stat-value { font-size: 1.05rem; }
+    .score-highlight { font-size: 1.2rem; }
+}
