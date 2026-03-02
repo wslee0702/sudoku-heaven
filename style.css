@@ -906,6 +906,19 @@ body {
     gap: 8px;
 }
 
+/* 전체 레벨 탭에서 레벨 뱃지 */
+.post-level-tag {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
 
 /* ===================== 컨페티 캔버스 ===================== */
 #confetti-canvas {

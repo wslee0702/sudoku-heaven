@@ -850,10 +850,10 @@ function showPostSaveLeaderboard(record, currentSeasonRecords) {
 
 function renderPostSaveTab(tab) {
     const { records = [], idx = -1 } = _psData[tab] || {};
-    renderPostSaveRecords(records, idx);
+    renderPostSaveRecords(records, idx, tab === 'all');
 }
 
-function renderPostSaveRecords(records, highlightIdx = -1) {
+function renderPostSaveRecords(records, highlightIdx = -1, showLevel = false) {
     const container = document.getElementById('post-save-records');
     if (records.length === 0) {
         container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
@@ -862,10 +862,11 @@ function renderPostSaveRecords(records, highlightIdx = -1) {
     container.innerHTML = records.map((r, i) => {
         const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
         const hl = i === highlightIdx ? ' post-save-highlight' : '';
+        const levelBadge = showLevel ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
         return `
             <div class="post-save-row${hl}">
                 <span class="post-rank">${icon}</span>
-                <span class="post-name">${r.name}</span>
+                <span class="post-name">${r.name}${levelBadge}</span>
                 <span class="post-score">${formatTime(r.timeSeconds)}</span>
                 <span class="post-hints">${r.hintsUsed}힌트</span>
                 <span class="post-pts">${r.score}초</span>
@@ -1189,7 +1190,7 @@ function bindEvents() {
         newGame(Game.difficulty);
     });
 
-    // 완성 후 화면: 다른 난이도 선택
+    // 완성 후 화면: 홈 (다른 난이도 선택)
     document.getElementById('diff-select-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
         document.querySelector('.celeb-main-info').style.display = '';
@@ -1197,6 +1198,22 @@ function bindEvents() {
         document.getElementById('post-save-section').classList.add('hidden');
         document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         showStartScreen();
+    });
+
+    // 완성 후 화면: 명예의 전당
+    document.getElementById('ps-hof-btn').addEventListener('click', () => {
+        document.getElementById('celebration-overlay').classList.add('hidden');
+        document.querySelector('.celeb-main-info').style.display = '';
+        document.querySelector('.save-section').style.display = '';
+        document.getElementById('post-save-section').classList.add('hidden');
+        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+        // 명예의 전당 탭 활성화 후 스크롤
+        document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('[data-tab="hof"]').classList.add('active');
+        document.getElementById('lb-current-panel').classList.add('hidden');
+        document.getElementById('lb-hof-panel').classList.remove('hidden');
+        renderHallOfFame();
+        document.querySelector('.leaderboard-section').scrollIntoView({ behavior: 'smooth' });
     });
 
     // 기록 초기화
