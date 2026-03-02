@@ -217,12 +217,9 @@
             </div>
         </div>
 
-        <!-- 저장 후 표시되는 섹션 -->
+        <!-- 저장 후 표시되는 섹션 (성공 메시지만, 이후 자동으로 명예의 전당 열림) -->
         <div id="post-save-section" class="hidden post-save-section">
             <p class="save-success-msg">✅ 기록이 저장됐어요!</p>
-            <div class="post-save-actions">
-                <button id="ps-hof-btn" class="btn btn-secondary">🏆 명예의 전당 보기</button>
-            </div>
         </div>
 
     </div>
@@ -257,9 +254,10 @@
             </div>
         </div>
         <div class="hof-card-tabs">
-            <button class="hof-tab active" data-hoftab="level">시즌·현재레벨</button>
-            <button class="hof-tab" data-hoftab="all">시즌·전체레벨</button>
+            <button class="hof-tab" data-hoftab="level">시즌·현재레벨</button>
+            <button class="hof-tab active" data-hoftab="all">시즌·전체레벨</button>
             <button class="hof-tab" data-hoftab="alltime">역대·현재레벨</button>
+            <button class="hof-tab" data-hoftab="alltimeall">역대·전체레벨</button>
         </div>
         <div class="hof-card-body">
             <div id="hof-records"></div>

@@ -344,7 +344,8 @@ function showStartScreen() {
 function showHofOverlay() {
     const levelFilter = document.getElementById('hof-level-filter');
     if (levelFilter) levelFilter.value = Game.difficulty;
-    document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+    // 기본 탭: 시즌·전체레벨 (index 1 = 'all')
+    document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 1));
     renderHallOfFame();
     document.getElementById('hof-overlay').classList.remove('hidden');
 }
@@ -693,7 +694,7 @@ function updateDifficultyDisplay(level) {
 
 const SEASON_META_KEY = 'sudoku_season_meta';
 const ARCHIVE_KEY     = 'sudoku_archive';
-const MAX_RECORDS     = 200;
+const MAX_RECORDS     = 1000;
 
 function getSeasonRecordsKey(id) { return `sudoku_records_S${id}`; }
 
@@ -814,11 +815,21 @@ function saveRecord(name) {
     // 전 세계 기록에도 저장 (실패해도 로컬은 이미 저장됨)
     saveScoreOnline(record);
 
-    // 저장 후: celeb 정보 + save-section 숨기고 성공 메시지 표시
+    stopConfetti();
+
+    // 저장 후: 성공 메시지 잠깐 표시 후 명예의 전당 자동 오픈
     document.querySelector('.celeb-main-info').style.display = 'none';
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
-    stopConfetti();
+
+    setTimeout(() => {
+        document.getElementById('celebration-overlay').classList.add('hidden');
+        // 다음 게임을 위해 축하 화면 상태 초기화
+        document.querySelector('.celeb-main-info').style.display = '';
+        document.querySelector('.save-section').style.display = '';
+        document.getElementById('post-save-section').classList.add('hidden');
+        showHofOverlay();
+    }, 1200);
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -884,9 +895,10 @@ function renderHallOfFame() {
     // 탭 레이블 업데이트
     document.querySelectorAll('.hof-tab').forEach(btn => {
         const t = btn.dataset.hoftab;
-        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${level}`;
-        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
-        if (t === 'alltime') btn.textContent = `역대 · Lv.${level}`;
+        if (t === 'level')      btn.textContent = `${seasonLabel} · Lv.${level}`;
+        if (t === 'all')        btn.textContent = `${seasonLabel} · 전체`;
+        if (t === 'alltime')    btn.textContent = `역대 · Lv.${level}`;
+        if (t === 'alltimeall') btn.textContent = `역대 · 전체`;
     });
 
     const activeTab = document.querySelector('.hof-tab.active');
@@ -894,8 +906,8 @@ function renderHallOfFame() {
 }
 
 function renderHofTab(tab, level) {
-    const showLevel  = tab === 'all';
-    const showSeason = tab === 'alltime';
+    const showLevel  = tab === 'all' || tab === 'alltimeall';
+    const showSeason = tab === 'alltime' || tab === 'alltimeall';
     let records = [];
 
     if (tab === 'level') {
@@ -907,11 +919,30 @@ function renderHofTab(tab, level) {
         records = getCurrentSeasonRecords()
             .sort((a, b) => a.score - b.score)
             .slice(0, 1000);
-    } else {
+    } else if (tab === 'alltime') {
         records = getAlltimeLevelRecords(level).slice(0, 1000);
+    } else if (tab === 'alltimeall') {
+        records = getAlltimeAllRecords().slice(0, 1000);
     }
 
     renderHofRecords(records, showLevel, showSeason);
+}
+
+// 역대 기록 - 전체 레벨 (현재 시즌 + 아카이브) - 시즌·레벨 이름 포함
+function getAlltimeAllRecords() {
+    const season  = getCurrentSeason();
+    const current = getCurrentSeasonRecords()
+        .map(r => ({ ...r, seasonName: season.name }));
+
+    const archived = [];
+    getArchive().forEach(s => {
+        try {
+            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
+            archived.push(...sr.map(r => ({ ...r, seasonName: s.name })));
+        } catch {}
+    });
+
+    return [...current, ...archived].sort((a, b) => a.score - b.score);
 }
 
 // 역대 기록 (현재 시즌 + 아카이브) - 시즌 이름 포함
@@ -1089,15 +1120,6 @@ function bindEvents() {
 
     // 다시시작 버튼
     document.getElementById('restart-btn').addEventListener('click', restartGame);
-
-    // 완성 후 화면: 명예의 전당
-    document.getElementById('ps-hof-btn').addEventListener('click', () => {
-        document.getElementById('celebration-overlay').classList.add('hidden');
-        document.querySelector('.celeb-main-info').style.display = '';
-        document.querySelector('.save-section').style.display = '';
-        document.getElementById('post-save-section').classList.add('hidden');
-        showHofOverlay();
-    });
 
     // 명예의 전당 오버레이 닫기
     document.getElementById('hof-close-btn').addEventListener('click', hideHofOverlay);
