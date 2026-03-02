@@ -776,7 +776,7 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===================== 축하 화면 ===================== */
-.celebration-box { max-width: 500px; }
+.celebration-box { max-width: 500px; max-height: 88vh; overflow-y: auto; }
 
 .celeb-header { display: flex; align-items: center; gap: 12px; }
 .celeb-emoji { font-size: 2rem; }
@@ -872,11 +872,40 @@ body {
 .post-hints { color: var(--text-muted); font-size: 0.82rem; }
 .post-pts   { font-weight: 700; color: var(--primary); }
 
+/* Post-save 탭 */
+.post-save-tabs {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+.ps-tab {
+    flex: 1;
+    padding: 5px 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    white-space: nowrap;
+    touch-action: manipulation;
+}
+.ps-tab:hover { border-color: var(--primary); color: var(--primary); }
+.ps-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
 .post-save-actions {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
+
 
 /* ===================== 컨페티 캔버스 ===================== */
 #confetti-canvas {

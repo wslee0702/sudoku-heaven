@@ -789,19 +789,64 @@ function saveRecord(name) {
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
 
-    // 같은 난이도 TOP 10 + 내 기록 하이라이트
-    const sameLevelAll = records.filter(r => r.difficulty === Game.difficulty);
-    const savedIdx = sameLevelAll.findIndex(r =>
-        r.name === record.name &&
-        r.score === record.score &&
-        r.timeSeconds === record.timeSeconds
-    );
-    const diffInfo2 = SudokuEngine.getDifficultyInfo(Game.difficulty);
-    document.querySelector('.post-save-title').textContent =
-        `📊 ${diffInfo2.name} Lv.${Game.difficulty} 시즌 기록`;
-    renderPostSaveRecords(sameLevelAll.slice(0, 10), savedIdx);
-
+    showPostSaveLeaderboard(record, records);
     stopConfetti();
+}
+
+// ── post-save 3개 탭 데이터 캐시
+let _psData = {};
+
+function showPostSaveLeaderboard(record, currentSeasonRecords) {
+    const season   = getCurrentSeason();
+    const diffInfo = SudokuEngine.getDifficultyInfo(Game.difficulty);
+
+    // 1. 현재 시즌 · 현재 레벨
+    const levelRecs    = currentSeasonRecords.filter(r => r.difficulty === Game.difficulty);
+    const levelRawIdx  = levelRecs.findIndex(r =>
+        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+    const levelIdx     = levelRawIdx >= 0 && levelRawIdx < 10 ? levelRawIdx : -1;
+
+    // 2. 현재 시즌 · 전체 레벨
+    const allRawIdx    = currentSeasonRecords.findIndex(r =>
+        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+    const allIdx       = allRawIdx >= 0 && allRawIdx < 10 ? allRawIdx : -1;
+
+    // 3. 역대 · 현재 레벨 (아카이브 포함)
+    const alltimeRecs  = [...levelRecs];
+    getArchive().forEach(s => {
+        try {
+            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
+            alltimeRecs.push(...sr.filter(r => r.difficulty === Game.difficulty));
+        } catch {}
+    });
+    alltimeRecs.sort((a, b) => a.score - b.score);
+    const atRawIdx     = alltimeRecs.findIndex(r =>
+        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+    const atIdx        = atRawIdx >= 0 && atRawIdx < 10 ? atRawIdx : -1;
+
+    _psData = {
+        level:   { records: levelRecs.slice(0, 10), idx: levelIdx },
+        all:     { records: currentSeasonRecords.slice(0, 10), idx: allIdx },
+        alltime: { records: alltimeRecs.slice(0, 10), idx: atIdx },
+    };
+
+    // 탭 레이블 업데이트
+    document.querySelectorAll('.ps-tab').forEach(btn => {
+        const t = btn.dataset.pstab;
+        if (t === 'level')   btn.textContent = `${season.name} · Lv.${Game.difficulty}`;
+        if (t === 'all')     btn.textContent = `${season.name} · 전체`;
+        if (t === 'alltime') btn.textContent = `역대 · Lv.${Game.difficulty}`;
+    });
+
+    // 첫 번째 탭 활성화
+    document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
+    document.querySelector('.ps-tab[data-pstab="level"]').classList.add('active');
+    renderPostSaveTab('level');
+}
+
+function renderPostSaveTab(tab) {
+    const { records = [], idx = -1 } = _psData[tab] || {};
+    renderPostSaveRecords(records, idx);
 }
 
 function renderPostSaveRecords(records, highlightIdx = -1) {
@@ -873,6 +918,14 @@ function showCelebration() {
 function renderLeaderboard() {
     const season    = getCurrentSeason();
     const filterVal = document.getElementById('lb-filter').value;
+
+    // 시즌 탭 레이블에 월 표시 (예: 현재 시즌 (2026.Mar))
+    const tabEl = document.querySelector('.lb-tab[data-tab="current"]');
+    if (tabEl) {
+        const d = new Date();
+        const mon = d.toLocaleString('en-US', { month: 'short' });
+        tabEl.textContent = `현재 시즌 (${d.getFullYear()}.${mon})`;
+    }
 
     document.getElementById('lb-season-name').textContent = season.name;
     document.getElementById('lb-season-date').textContent =
@@ -1106,12 +1159,23 @@ function bindEvents() {
     // 다시시작 버튼
     document.getElementById('restart-btn').addEventListener('click', restartGame);
 
+    // Post-save 탭 전환
+    document.querySelectorAll('.ps-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderPostSaveTab(btn.dataset.pstab);
+        });
+    });
+
     // 완성 후 화면: 같은 난이도 새 게임
     document.getElementById('same-diff-new-game-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
         document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
+        // ps-tab 초기 상태 복원
+        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         newGame(Game.difficulty);
     });
 
@@ -1121,6 +1185,7 @@ function bindEvents() {
         document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
+        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         showStartScreen();
     });
 
