@@ -86,7 +86,8 @@
 
     <!-- 게임 액션 버튼 -->
     <div class="game-actions">
-        <button id="same-level-btn" class="btn btn-secondary btn-sm">↺ 같은 난이도 새 게임</button>
+        <button id="restart-btn" class="btn btn-secondary btn-sm">↩ 다시시작</button>
+        <button id="same-level-btn" class="btn btn-secondary btn-sm">↺ 같은 난이도</button>
         <button id="home-btn" class="btn btn-secondary btn-sm">🏠 홈</button>
     </div>
 
@@ -233,32 +234,35 @@
 <!-- 완성 축하 화면 -->
 <div id="celebration-overlay" class="overlay hidden">
     <div class="overlay-box celebration-box">
-        <div class="celeb-header">
-            <span class="celeb-emoji">🎉</span>
-            <h2>완성!</h2>
-            <span class="celeb-emoji">🎊</span>
-        </div>
+        <!-- 완성 정보 (저장 후 숨겨짐) -->
+        <div class="celeb-main-info">
+            <div class="celeb-header">
+                <span class="celeb-emoji">🎉</span>
+                <h2>완성!</h2>
+                <span class="celeb-emoji">🎊</span>
+            </div>
 
-        <div class="celeb-stats">
-            <div class="stat-item">
-                <span class="stat-label">완성 시간</span>
-                <span id="final-time" class="stat-value">00:00</span>
+            <div class="celeb-stats">
+                <div class="stat-item">
+                    <span class="stat-label">완성 시간</span>
+                    <span id="final-time" class="stat-value">00:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">난이도</span>
+                    <span id="final-difficulty" class="stat-value">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">힌트 사용</span>
+                    <span id="final-hints" class="stat-value">0개</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">최종 점수</span>
+                    <span id="final-score" class="stat-value score-highlight">-</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">난이도</span>
-                <span id="final-difficulty" class="stat-value">-</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">힌트 사용</span>
-                <span id="final-hints" class="stat-value">0개</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">최종 점수</span>
-                <span id="final-score" class="stat-value score-highlight">-</span>
-            </div>
-        </div>
 
-        <div id="percentile-msg" class="percentile-msg hidden"></div>
+            <div id="percentile-msg" class="percentile-msg hidden"></div>
+        </div>
 
         <div class="save-section">
             <p class="save-label">닉네임을 입력하고 기록을 저장하세요!</p>

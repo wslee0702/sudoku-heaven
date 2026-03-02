@@ -826,15 +826,12 @@ body {
 .name-input:focus { border-color: var(--primary); }
 
 /* ===================== 저장 후 화면 ===================== */
-.post-save-section {
-    width: 100%;
-    border-top: 1px solid var(--border);
-    padding-top: 16px;
-}
+.post-save-section { width: 100%; }
+
 .post-save-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--text-muted);
+    color: var(--text);
     margin-bottom: 10px;
     text-align: center;
 }
@@ -846,21 +843,34 @@ body {
 }
 .post-save-row {
     display: grid;
-    grid-template-columns: 36px 1fr 55px 50px 60px;
-    padding: 8px 12px;
-    gap: 6px;
-    font-size: 0.82rem;
+    grid-template-columns: 40px 1fr 62px 52px 68px;
+    padding: 10px 14px;
+    gap: 8px;
+    font-size: 0.88rem;
     align-items: center;
     border-top: 1px solid var(--border);
     background: var(--surface);
+    transition: background 0.1s;
 }
 .post-save-row:first-child { border-top: none; }
 .post-save-row:hover { background: var(--bg); }
+
+/* 내 기록 강조 */
+.post-save-row.post-save-highlight {
+    background: linear-gradient(135deg, #EFF6FF, #DBEAFE) !important;
+    border-left: 4px solid var(--primary);
+}
+.post-save-row.post-save-highlight .post-name,
+.post-save-row.post-save-highlight .post-pts {
+    font-weight: 800;
+    color: var(--primary);
+}
+
 .post-rank { font-weight: 700; }
-.post-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
-.post-score { font-family: monospace; color: var(--text-muted); font-size: 0.78rem; }
-.post-hints { color: var(--text-muted); font-size: 0.78rem; }
-.post-pts   { font-weight: 700; color: var(--primary); font-size: 0.82rem; }
+.post-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-score { font-family: monospace; color: var(--text-muted); font-size: 0.82rem; }
+.post-hints { color: var(--text-muted); font-size: 0.82rem; }
+.post-pts   { font-weight: 700; color: var(--primary); }
 
 .post-save-actions {
     display: flex;

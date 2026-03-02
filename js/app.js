@@ -422,19 +422,20 @@ function restartGame() {
 function onCellClick(r, c) {
     if (Game.paused || Game.completed) return;
 
-    // 이미 선택된 셀인데 selectedNum이 있으면 숫자 입력
+    // 이미 선택된 셀 재클릭
     if (Game.selected && Game.selected.row === r && Game.selected.col === c) {
-        if (Game.selectedNum !== 0) {
-            inputNumber(Game.selectedNum);
+        if (Game.selectedNum !== 0 && !Game.given[r][c] && !Game.hinted[r][c]) {
+            // 같은 숫자 → 지우기 / 다른 숫자 → 입력
+            inputNumber(Game.board[r][c] === Game.selectedNum ? 0 : Game.selectedNum);
         }
         return;
     }
 
     Game.selected = { row: r, col: c };
 
-    // selectedNum이 있으면 클릭한 셀에 바로 입력
     if (Game.selectedNum !== 0 && !Game.given[r][c] && !Game.hinted[r][c]) {
-        inputNumber(Game.selectedNum);
+        // 같은 숫자 → 지우기 / 다른 숫자 → 입력
+        inputNumber(Game.board[r][c] === Game.selectedNum ? 0 : Game.selectedNum);
     } else {
         renderBoard();
     }
@@ -783,30 +784,37 @@ function saveRecord(name) {
 
     renderLeaderboard();
 
-    // 저장 후: save-section 숨기고 post-save-section 표시
+    // 저장 후: celeb 정보 + save-section 숨기고 post-save-section 크게 표시
+    document.querySelector('.celeb-main-info').style.display = 'none';
     document.querySelector('.save-section').style.display = 'none';
-    const postSave = document.getElementById('post-save-section');
-    postSave.classList.remove('hidden');
+    document.getElementById('post-save-section').classList.remove('hidden');
 
-    // 같은 난이도 TOP 5 보여주기
-    const sameLevelTop = records
-        .filter(r => r.difficulty === Game.difficulty)
-        .slice(0, 5);
-    renderPostSaveRecords(sameLevelTop);
+    // 같은 난이도 TOP 10 + 내 기록 하이라이트
+    const sameLevelAll = records.filter(r => r.difficulty === Game.difficulty);
+    const savedIdx = sameLevelAll.findIndex(r =>
+        r.name === record.name &&
+        r.score === record.score &&
+        r.timeSeconds === record.timeSeconds
+    );
+    const diffInfo2 = SudokuEngine.getDifficultyInfo(Game.difficulty);
+    document.querySelector('.post-save-title').textContent =
+        `📊 ${diffInfo2.name} Lv.${Game.difficulty} 시즌 기록`;
+    renderPostSaveRecords(sameLevelAll.slice(0, 10), savedIdx);
 
     stopConfetti();
 }
 
-function renderPostSaveRecords(records) {
+function renderPostSaveRecords(records, highlightIdx = -1) {
     const container = document.getElementById('post-save-records');
     if (records.length === 0) {
-        container.innerHTML = '<div style="padding:12px;text-align:center;color:#64748B;font-size:0.85rem">아직 기록이 없어요!</div>';
+        container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
         return;
     }
     container.innerHTML = records.map((r, i) => {
         const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
+        const hl = i === highlightIdx ? ' post-save-highlight' : '';
         return `
-            <div class="post-save-row">
+            <div class="post-save-row${hl}">
                 <span class="post-rank">${icon}</span>
                 <span class="post-name">${r.name}</span>
                 <span class="post-score">${formatTime(r.timeSeconds)}</span>
@@ -1095,9 +1103,13 @@ function bindEvents() {
         if (e.key === 'Enter') saveRecord(document.getElementById('player-name').value);
     });
 
+    // 다시시작 버튼
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+
     // 완성 후 화면: 같은 난이도 새 게임
     document.getElementById('same-diff-new-game-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
+        document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
         newGame(Game.difficulty);
@@ -1106,6 +1118,7 @@ function bindEvents() {
     // 완성 후 화면: 다른 난이도 선택
     document.getElementById('diff-select-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
+        document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
         showStartScreen();
