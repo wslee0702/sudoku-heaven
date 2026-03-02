@@ -784,95 +784,11 @@ function saveRecord(name) {
 
     renderLeaderboard();
 
-    // 저장 후: celeb 정보 + save-section 숨기고 post-save-section 크게 표시
+    // 저장 후: celeb 정보 + save-section 숨기고 post-save-section 표시
     document.querySelector('.celeb-main-info').style.display = 'none';
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
-
-    showPostSaveLeaderboard(record, records);
     stopConfetti();
-}
-
-// ── post-save 3개 탭 데이터 캐시
-let _psData = {};
-
-function showPostSaveLeaderboard(record, currentSeasonRecords) {
-    const season   = getCurrentSeason();
-    const diffInfo = SudokuEngine.getDifficultyInfo(Game.difficulty);
-
-    // 1. 현재 시즌 · 현재 레벨
-    const levelRecs    = currentSeasonRecords.filter(r => r.difficulty === Game.difficulty);
-    const levelRawIdx  = levelRecs.findIndex(r =>
-        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-    const levelIdx     = levelRawIdx >= 0 && levelRawIdx < 10 ? levelRawIdx : -1;
-
-    // 2. 현재 시즌 · 전체 레벨
-    const allRawIdx    = currentSeasonRecords.findIndex(r =>
-        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-    const allIdx       = allRawIdx >= 0 && allRawIdx < 10 ? allRawIdx : -1;
-
-    // 3. 역대 · 현재 레벨 (아카이브 포함)
-    const alltimeRecs  = [...levelRecs];
-    getArchive().forEach(s => {
-        try {
-            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
-            alltimeRecs.push(...sr.filter(r => r.difficulty === Game.difficulty));
-        } catch {}
-    });
-    alltimeRecs.sort((a, b) => a.score - b.score);
-    const atRawIdx     = alltimeRecs.findIndex(r =>
-        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-    const atIdx        = atRawIdx >= 0 && atRawIdx < 10 ? atRawIdx : -1;
-
-    _psData = {
-        level:   { records: levelRecs.slice(0, 10), idx: levelIdx },
-        all:     { records: currentSeasonRecords.slice(0, 10), idx: allIdx },
-        alltime: { records: alltimeRecs.slice(0, 10), idx: atIdx },
-    };
-
-    // 탭 레이블 업데이트 (시즌명 + 연월 표시)
-    const _d = new Date();
-    const _mon = _d.toLocaleString('en-US', { month: 'short' });
-    const seasonLabel = `${season.name} (${_d.getFullYear()}.${_mon}.)`;
-
-    document.querySelectorAll('.ps-tab').forEach(btn => {
-        const t = btn.dataset.pstab;
-        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${Game.difficulty}`;
-        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
-        if (t === 'alltime') btn.textContent = `역대 · Lv.${Game.difficulty}`;
-    });
-
-    // 첫 번째 탭 활성화
-    document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
-    document.querySelector('.ps-tab[data-pstab="level"]').classList.add('active');
-    renderPostSaveTab('level');
-}
-
-function renderPostSaveTab(tab) {
-    const { records = [], idx = -1 } = _psData[tab] || {};
-    renderPostSaveRecords(records, idx, tab === 'all');
-}
-
-function renderPostSaveRecords(records, highlightIdx = -1, showLevel = false) {
-    const container = document.getElementById('post-save-records');
-    if (records.length === 0) {
-        container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
-        return;
-    }
-    container.innerHTML = records.map((r, i) => {
-        const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
-        const hl = i === highlightIdx ? ' post-save-highlight' : '';
-        const levelBadge = showLevel ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
-        return `
-            <div class="post-save-row${hl}">
-                <span class="post-rank">${icon}</span>
-                <span class="post-name">${r.name}${levelBadge}</span>
-                <span class="post-score">${formatTime(r.timeSeconds)}</span>
-                <span class="post-hints">${r.hintsUsed}힌트</span>
-                <span class="post-pts">${r.score}초</span>
-            </div>
-        `;
-    }).join('');
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -917,7 +833,6 @@ function showCelebration() {
     document.querySelector('.celeb-main-info').style.display = '';
     document.querySelector('.save-section').style.display = '';
     document.getElementById('post-save-section').classList.add('hidden');
-    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
 
     document.getElementById('player-name').value = '';
     document.getElementById('celebration-overlay').classList.remove('hidden');
@@ -1170,43 +1085,12 @@ function bindEvents() {
     // 다시시작 버튼
     document.getElementById('restart-btn').addEventListener('click', restartGame);
 
-    // Post-save 탭 전환
-    document.querySelectorAll('.ps-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderPostSaveTab(btn.dataset.pstab);
-        });
-    });
-
-    // 완성 후 화면: 같은 난이도 새 게임
-    document.getElementById('same-diff-new-game-btn').addEventListener('click', () => {
-        document.getElementById('celebration-overlay').classList.add('hidden');
-        document.querySelector('.celeb-main-info').style.display = '';
-        document.querySelector('.save-section').style.display = '';
-        document.getElementById('post-save-section').classList.add('hidden');
-        // ps-tab 초기 상태 복원
-        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
-        newGame(Game.difficulty);
-    });
-
-    // 완성 후 화면: 홈 (다른 난이도 선택)
-    document.getElementById('diff-select-btn').addEventListener('click', () => {
-        document.getElementById('celebration-overlay').classList.add('hidden');
-        document.querySelector('.celeb-main-info').style.display = '';
-        document.querySelector('.save-section').style.display = '';
-        document.getElementById('post-save-section').classList.add('hidden');
-        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
-        showStartScreen();
-    });
-
     // 완성 후 화면: 명예의 전당
     document.getElementById('ps-hof-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
         document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
-        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         // 명예의 전당 탭 활성화 후 스크롤
         document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
         document.querySelector('[data-tab="hof"]').classList.add('active');
