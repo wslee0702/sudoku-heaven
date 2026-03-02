@@ -138,7 +138,7 @@
                 <ul>
                     <li>방향키 → 이동</li>
                     <li>1~9 → 숫자 선택 + 입력</li>
-                    <li>Enter → 숫자 순환 (입력 없음)</li>
+                    <li>Enter → 숫자 순환 / Shift+Enter → 역순환</li>
                     <li>Delete / 0 → 지우기</li>
                     <li>스페이스 / M → 메모 모드</li>
                     <li>H → 힌트</li>
@@ -275,6 +275,8 @@
 
         <!-- 저장 후 표시되는 섹션 -->
         <div id="post-save-section" class="hidden post-save-section">
+            <h3 id="ps-alltime-title" class="post-save-title"></h3>
+            <div id="post-save-records" class="post-save-records"></div>
             <div class="post-save-actions">
                 <button id="ps-hof-btn" class="btn btn-secondary">🏆 명예의 전당 보기</button>
             </div>

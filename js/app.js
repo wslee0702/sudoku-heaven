@@ -470,6 +470,7 @@ function inputNumber(num) {
         } else {
             Game.board[r][c] = num;
             Game.memos[r][c].clear();
+            clearRelatedMemos(r, c, num);
         }
         checkLineCompletions();
         checkNumberCompletion(num);
@@ -477,6 +478,24 @@ function inputNumber(num) {
     }
 
     renderBoard();
+}
+
+// 같은 행/열/박스의 메모에서 해당 숫자 자동 삭제
+function clearRelatedMemos(r, c, num) {
+    if (num === 0) return;
+    for (let cc = 0; cc < 9; cc++) {
+        if (cc !== c) Game.memos[r][cc].delete(num);
+    }
+    for (let rr = 0; rr < 9; rr++) {
+        if (rr !== r) Game.memos[rr][c].delete(num);
+    }
+    const br = Math.floor(r / 3) * 3;
+    const bc = Math.floor(c / 3) * 3;
+    for (let rr = br; rr < br + 3; rr++) {
+        for (let cc = bc; cc < bc + 3; cc++) {
+            if (rr !== r || cc !== c) Game.memos[rr][cc].delete(num);
+        }
+    }
 }
 
 // ===================== 키패드 숫자 선택 =====================
@@ -569,15 +588,17 @@ function useHint() {
 
     saveToHistory();
 
-    Game.board[targetR][targetC] = Game.solution[targetR][targetC];
+    const hintNum = Game.solution[targetR][targetC];
+    Game.board[targetR][targetC] = hintNum;
     Game.hinted[targetR][targetC] = true;
     Game.memos[targetR][targetC].clear();
+    clearRelatedMemos(targetR, targetC, hintNum);
     Game.hintsLeft--;
 
     updateHintBtn();
     renderBoard();
     checkLineCompletions();
-    checkNumberCompletion(Game.solution[targetR][targetC]);
+    checkNumberCompletion(hintNum);
     checkComplete();
 }
 
@@ -788,7 +809,57 @@ function saveRecord(name) {
     document.querySelector('.celeb-main-info').style.display = 'none';
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
+
+    // 역대 현재 레벨 순위표 렌더링
+    const alltimeRecs = getAlltimeLevelRecords(Game.difficulty);
+    const atIdx = alltimeRecs.findIndex(r =>
+        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+    const highlightIdx = atIdx >= 0 && atIdx < 10 ? atIdx : -1;
+    const titleEl = document.getElementById('ps-alltime-title');
+    if (titleEl) titleEl.textContent = `📊 역대 기록 · Lv.${Game.difficulty}`;
+    renderPostSaveRecords(alltimeRecs.slice(0, 10), highlightIdx);
+
     stopConfetti();
+}
+
+// 역대 기록 (현재 시즌 + 아카이브) - 시즌 이름 포함
+function getAlltimeLevelRecords(level) {
+    const season = getCurrentSeason();
+    const current = getCurrentSeasonRecords()
+        .filter(r => r.difficulty === level)
+        .map(r => ({ ...r, seasonName: season.name }));
+
+    const archived = [];
+    getArchive().forEach(s => {
+        try {
+            const sr = JSON.parse(localStorage.getItem(getSeasonRecordsKey(s.id))) || [];
+            archived.push(...sr.filter(r => r.difficulty === level).map(r => ({ ...r, seasonName: s.name })));
+        } catch {}
+    });
+
+    return [...current, ...archived].sort((a, b) => a.score - b.score);
+}
+
+function renderPostSaveRecords(records, highlightIdx = -1) {
+    const container = document.getElementById('post-save-records');
+    if (records.length === 0) {
+        container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
+        return;
+    }
+    container.innerHTML = records.map((r, i) => {
+        const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
+        const hl = i === highlightIdx ? ' post-save-highlight' : '';
+        const seasonBadge = r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
+        return `
+            <div class="post-save-row${hl}">
+                <span class="post-rank">${icon}</span>
+                <span class="post-name">${r.name}${seasonBadge}</span>
+                <span class="post-score">${formatTime(r.timeSeconds)}</span>
+                <span class="post-hints">${r.hintsUsed}힌트</span>
+                <span class="post-pts">${r.score}초</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -1195,12 +1266,16 @@ function bindEvents() {
             return;
         }
 
-        // Enter → 키패드 순환만 (입력 없음)
-        // 다른 칸으로 이동하거나 클릭할 때 해당 번호가 입력됨
+        // Enter → 키패드 순환 (Shift+Enter = 역방향)
         if (key === 'Enter') {
             e.preventDefault();
-            if (Game.selectedNum === 9) Game.selectedNum = 0;
-            else Game.selectedNum++;
+            if (e.shiftKey) {
+                if (Game.selectedNum === 0) Game.selectedNum = 9;
+                else Game.selectedNum--;
+            } else {
+                if (Game.selectedNum === 9) Game.selectedNum = 0;
+                else Game.selectedNum++;
+            }
             updateNumpadUI();
             renderBoard();
             return;
