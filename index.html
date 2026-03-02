@@ -275,7 +275,11 @@
 
         <!-- 저장 후 표시되는 섹션 -->
         <div id="post-save-section" class="hidden post-save-section">
-            <h3 id="ps-alltime-title" class="post-save-title"></h3>
+            <div class="post-save-tabs">
+                <button class="ps-tab active" data-pstab="level">시즌·현재레벨</button>
+                <button class="ps-tab" data-pstab="all">시즌·전체레벨</button>
+                <button class="ps-tab" data-pstab="alltime">역대·현재레벨</button>
+            </div>
             <div id="post-save-records" class="post-save-records"></div>
             <div class="post-save-actions">
                 <button id="ps-hof-btn" class="btn btn-secondary">🏆 명예의 전당 보기</button>

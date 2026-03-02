@@ -810,16 +810,64 @@ function saveRecord(name) {
     document.querySelector('.save-section').style.display = 'none';
     document.getElementById('post-save-section').classList.remove('hidden');
 
-    // 역대 현재 레벨 순위표 렌더링
-    const alltimeRecs = getAlltimeLevelRecords(Game.difficulty);
-    const atIdx = alltimeRecs.findIndex(r =>
-        r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
-    const highlightIdx = atIdx >= 0 && atIdx < 10 ? atIdx : -1;
-    const titleEl = document.getElementById('ps-alltime-title');
-    if (titleEl) titleEl.textContent = `📊 역대 기록 · Lv.${Game.difficulty}`;
-    renderPostSaveRecords(alltimeRecs.slice(0, 10), highlightIdx);
-
+    showPostSaveLeaderboard(record, records);
     stopConfetti();
+}
+
+// ── post-save 3탭 데이터 캐시
+let _psData = {};
+
+function showPostSaveLeaderboard(record, currentSeasonRecords) {
+    const season = getCurrentSeason();
+
+    // 1. 현재 시즌 · 현재 레벨
+    const levelRecs = currentSeasonRecords.filter(r => r.difficulty === Game.difficulty);
+    const levelIdx  = (() => {
+        const i = levelRecs.findIndex(r =>
+            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+        return i >= 0 && i < 10 ? i : -1;
+    })();
+
+    // 2. 현재 시즌 · 전체 레벨 (레벨 뱃지 표시)
+    const allIdx = (() => {
+        const i = currentSeasonRecords.findIndex(r =>
+            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+        return i >= 0 && i < 10 ? i : -1;
+    })();
+
+    // 3. 역대 · 현재 레벨 (시즌 뱃지 표시)
+    const alltimeRecs = getAlltimeLevelRecords(Game.difficulty);
+    const atIdx = (() => {
+        const i = alltimeRecs.findIndex(r =>
+            r.name === record.name && r.score === record.score && r.timeSeconds === record.timeSeconds);
+        return i >= 0 && i < 10 ? i : -1;
+    })();
+
+    _psData = {
+        level:   { records: levelRecs.slice(0, 10),             idx: levelIdx, showLevel: false, showSeason: false },
+        all:     { records: currentSeasonRecords.slice(0, 10),  idx: allIdx,   showLevel: true,  showSeason: false },
+        alltime: { records: alltimeRecs.slice(0, 10),           idx: atIdx,    showLevel: false, showSeason: true  },
+    };
+
+    // 탭 레이블 업데이트 (시즌명 + 연월)
+    const d = new Date();
+    const mon = d.toLocaleString('en-US', { month: 'short' });
+    const seasonLabel = `${season.name} (${d.getFullYear()}.${mon}.)`;
+    document.querySelectorAll('.ps-tab').forEach(btn => {
+        const t = btn.dataset.pstab;
+        if (t === 'level')   btn.textContent = `${seasonLabel} · Lv.${Game.difficulty}`;
+        if (t === 'all')     btn.textContent = `${seasonLabel} · 전체`;
+        if (t === 'alltime') btn.textContent = `역대 · Lv.${Game.difficulty}`;
+    });
+
+    // 첫 번째 탭 활성화
+    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+    renderPostSaveTab('level');
+}
+
+function renderPostSaveTab(tab) {
+    const { records = [], idx = -1, showLevel = false, showSeason = false } = _psData[tab] || {};
+    renderPostSaveRecords(records, idx, showLevel, showSeason);
 }
 
 // 역대 기록 (현재 시즌 + 아카이브) - 시즌 이름 포함
@@ -840,7 +888,7 @@ function getAlltimeLevelRecords(level) {
     return [...current, ...archived].sort((a, b) => a.score - b.score);
 }
 
-function renderPostSaveRecords(records, highlightIdx = -1) {
+function renderPostSaveRecords(records, highlightIdx = -1, showLevel = false, showSeason = false) {
     const container = document.getElementById('post-save-records');
     if (records.length === 0) {
         container.innerHTML = '<div style="padding:14px;text-align:center;color:#64748B;font-size:0.88rem">아직 기록이 없어요!</div>';
@@ -849,11 +897,12 @@ function renderPostSaveRecords(records, highlightIdx = -1) {
     container.innerHTML = records.map((r, i) => {
         const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}위`;
         const hl = i === highlightIdx ? ' post-save-highlight' : '';
-        const seasonBadge = r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
+        const levelBadge  = showLevel  ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
+        const seasonBadge = showSeason && r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
         return `
             <div class="post-save-row${hl}">
                 <span class="post-rank">${icon}</span>
-                <span class="post-name">${r.name}${seasonBadge}</span>
+                <span class="post-name">${r.name}${levelBadge}${seasonBadge}</span>
                 <span class="post-score">${formatTime(r.timeSeconds)}</span>
                 <span class="post-hints">${r.hintsUsed}힌트</span>
                 <span class="post-pts">${r.score}초</span>
@@ -904,6 +953,7 @@ function showCelebration() {
     document.querySelector('.celeb-main-info').style.display = '';
     document.querySelector('.save-section').style.display = '';
     document.getElementById('post-save-section').classList.add('hidden');
+    document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
 
     document.getElementById('player-name').value = '';
     document.getElementById('celebration-overlay').classList.remove('hidden');
@@ -1156,12 +1206,22 @@ function bindEvents() {
     // 다시시작 버튼
     document.getElementById('restart-btn').addEventListener('click', restartGame);
 
+    // Post-save 탭 전환
+    document.querySelectorAll('.ps-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ps-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderPostSaveTab(btn.dataset.pstab);
+        });
+    });
+
     // 완성 후 화면: 명예의 전당
     document.getElementById('ps-hof-btn').addEventListener('click', () => {
         document.getElementById('celebration-overlay').classList.add('hidden');
         document.querySelector('.celeb-main-info').style.display = '';
         document.querySelector('.save-section').style.display = '';
         document.getElementById('post-save-section').classList.add('hidden');
+        document.querySelectorAll('.ps-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
         // 명예의 전당 탭 활성화 후 스크롤
         document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
         document.querySelector('[data-tab="hof"]').classList.add('active');
