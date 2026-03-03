@@ -341,11 +341,16 @@ function showStartScreen() {
     document.getElementById('start-screen').classList.remove('hidden');
 }
 
-function showHofOverlay() {
+function showHofOverlay(showSaveBanner = false) {
     const levelFilter = document.getElementById('hof-level-filter');
     if (levelFilter) levelFilter.value = Game.difficulty;
     // 기본 탭: 시즌·전체레벨 (index 1 = 'all')
     document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 1));
+
+    // 저장 성공 배너 제어
+    const banner = document.getElementById('hof-save-banner');
+    if (banner) banner.classList.toggle('hidden', !showSaveBanner);
+
     renderHallOfFame();
     document.getElementById('hof-overlay').classList.remove('hidden');
 }
@@ -813,19 +818,9 @@ function saveRecord(name) {
 
     stopConfetti();
 
-    // 저장 후: 성공 메시지 잠깐 표시 후 명예의 전당 자동 오픈
-    document.querySelector('.celeb-main-info').style.display = 'none';
-    document.querySelector('.save-section').style.display = 'none';
-    document.getElementById('post-save-section').classList.remove('hidden');
-
-    setTimeout(() => {
-        document.getElementById('celebration-overlay').classList.add('hidden');
-        // 다음 게임을 위해 축하 화면 상태 초기화
-        document.querySelector('.celeb-main-info').style.display = '';
-        document.querySelector('.save-section').style.display = '';
-        document.getElementById('post-save-section').classList.add('hidden');
-        showHofOverlay();
-    }, 1200);
+    // 저장 즉시: 축하 화면 닫고 명예의 전당 오픈 (상단에 저장 성공 배너 표시)
+    document.getElementById('celebration-overlay').classList.add('hidden');
+    showHofOverlay(true);
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -866,10 +861,9 @@ function showCelebration() {
     if (pctMsg) { pctEl.textContent = pctMsg; pctEl.classList.remove('hidden'); }
     else         { pctEl.classList.add('hidden'); }
 
-    // 이전 게임의 post-save 상태 초기화 (닉네임 입력 화면이 항상 먼저 보이도록)
+    // 닉네임 입력 화면 항상 초기 상태로 표시
     document.querySelector('.celeb-main-info').style.display = '';
     document.querySelector('.save-section').style.display = '';
-    document.getElementById('post-save-section').classList.add('hidden');
 
     document.getElementById('player-name').value = '';
     document.getElementById('celebration-overlay').classList.remove('hidden');

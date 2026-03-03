@@ -784,6 +784,17 @@ body {
     padding: 12px 28px 24px;
 }
 
+.hof-save-banner {
+    background: #DCFCE7;
+    color: #15803D;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 28px;
+    border-bottom: 1px solid #BBF7D0;
+    flex-shrink: 0;
+}
+
 .hof-card-footer {
     display: flex;
     gap: 10px;
