@@ -345,7 +345,7 @@ function showStartScreen() {
     document.getElementById('start-screen').classList.remove('hidden');
 }
 
-function showHofOverlay(showSaveBanner = false) {
+async function showHofOverlay(showSaveBanner = false) {
     const levelFilter = document.getElementById('hof-level-filter');
     if (levelFilter) levelFilter.value = Game.difficulty;
     // 기본 탭: 시즌·전체레벨 (index 1 = 'all')
@@ -355,8 +355,9 @@ function showHofOverlay(showSaveBanner = false) {
     const banner = document.getElementById('hof-save-banner');
     if (banner) banner.classList.toggle('hidden', !showSaveBanner);
 
-    renderHallOfFame();
+    // 오버레이 즉시 표시 (기록은 비동기로 로드)
     document.getElementById('hof-overlay').classList.remove('hidden');
+    await renderHallOfFame();
 }
 
 function hideHofOverlay() {
@@ -800,13 +801,13 @@ function migrateOldRecords() {
 
 // ===================== 기록 저장 =====================
 
-function saveRecord(name) {
+async function saveRecord(name) {
     const hintsUsed = 5 - Game.hintsLeft;
     const score     = Game.timerSeconds + hintsUsed * 60;
     const diffInfo  = SudokuEngine.getDifficultyInfo(Game.difficulty);
 
     const record = {
-        name:        escapeHtml(name.trim() || '이름없음'),
+        name:        escapeHtml(name.trim() || (currentLang === 'en' ? 'Anonymous' : '이름없음')),
         difficulty:  Game.difficulty,
         diffName:    diffInfo.name,
         tier:        diffInfo.tier,
@@ -814,16 +815,27 @@ function saveRecord(name) {
         hintsUsed,
         score,
         date:    new Date().toLocaleDateString('ko-KR'),
-        savedAt: Date.now(), // 하이라이트 + 순위 알림용 고유 ID
+        savedAt: Date.now(),
     };
 
+    // 저장 버튼 비활성화
+    const saveBtn = document.getElementById('save-score-btn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '...'; }
+
+    // localStorage 백업 저장
     const records = getCurrentSeasonRecords();
     records.push(record);
     records.sort((a, b) => a.score - b.score);
     saveCurrentSeasonRecords(records);
 
-    // 현재 레벨 시즌 순위 확인 → 10위 이내면 토스트 알림
-    lastSavedRecord = record;
+    // Supabase 저장 (await → 삽입된 id 수신)
+    const onlineData = await saveScoreOnline(record);
+    lastSavedRecord = onlineData ? { supabaseId: onlineData.id } : null;
+
+    // 저장 버튼 복원
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('saveBtn'); }
+
+    // 순위 토스트 (로컬 기록 기준 즉시 피드백)
     const levelRecords = records.filter(r => r.difficulty === record.difficulty);
     const rank = levelRecords.findIndex(r => r.savedAt === record.savedAt) + 1;
     if (rank > 0 && rank <= 10) {
@@ -831,12 +843,9 @@ function saveRecord(name) {
         showRankToast(t('rankToast', emoji, record.difficulty, rank));
     }
 
-    // 전 세계 기록에도 저장 (실패해도 로컬은 이미 저장됨)
-    saveScoreOnline(record);
-
     stopConfetti();
 
-    // 저장 즉시: 축하 화면 닫고 명예의 전당 오픈 (상단에 저장 성공 배너 표시)
+    // 축하 화면 닫고 명예의 전당 오픈 (저장 성공 배너 포함)
     document.getElementById('celebration-overlay').classList.add('hidden');
     showHofOverlay(true);
 }
@@ -904,13 +913,13 @@ function showCelebration() {
 
 // ===================== 명예의 전당 렌더링 (3탭) =====================
 
-function renderHallOfFame() {
-    const season = getCurrentSeason();
+async function renderHallOfFame() {
     const level  = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
 
     const d   = new Date();
     const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-    const seasonLabel = `${season.name} (${d.getFullYear()} ${mon})`;
+    // 시즌 레이블 = 이번 달 (전 세계 공통 기준)
+    const seasonLabel = `${d.getFullYear()} ${mon}`;
 
     document.getElementById('hof-season-label').textContent = seasonLabel;
 
@@ -924,27 +933,29 @@ function renderHallOfFame() {
     });
 
     const activeTab = document.querySelector('.hof-tab.active');
-    renderHofTab(activeTab ? activeTab.dataset.hoftab : 'level', level);
+    await renderHofTab(activeTab ? activeTab.dataset.hoftab : 'level', level);
 }
 
-function renderHofTab(tab, level) {
+async function renderHofTab(tab, level) {
     const showLevel  = tab === 'all' || tab === 'alltimeall';
     const showSeason = tab === 'alltime' || tab === 'alltimeall';
-    let records = [];
 
-    if (tab === 'level') {
-        records = getCurrentSeasonRecords()
-            .filter(r => r.difficulty === level)
-            .sort((a, b) => a.score - b.score)
-            .slice(0, 1000);
-    } else if (tab === 'all') {
-        records = getCurrentSeasonRecords()
-            .sort((a, b) => a.score - b.score)
-            .slice(0, 1000);
-    } else if (tab === 'alltime') {
-        records = getAlltimeLevelRecords(level).slice(0, 1000);
-    } else if (tab === 'alltimeall') {
-        records = getAlltimeAllRecords().slice(0, 1000);
+    // 로딩 표시
+    document.getElementById('hof-records').innerHTML =
+        `<div class="lb-empty lb-loading">${t('hofLoading')}</div>`;
+
+    // "시즌" 탭 = 이번 달 / "역대" 탭 = 전체
+    const sinceIso   = (tab === 'level' || tab === 'all') ? getCurrentMonthIso() : null;
+    const levelParam = (tab === 'level' || tab === 'alltime') ? level : null;
+
+    const rawData = await loadGlobalScores({ level: levelParam, sinceIso, limit: 1000 });
+
+    let records;
+    if (rawData === null) {
+        // Supabase 연결 실패 → localStorage 폴백
+        records = getLocalFallbackRecords(tab, level);
+    } else {
+        records = rawData.map(mapSupabaseRecord);
     }
 
     renderHofRecords(records, showLevel, showSeason);
@@ -985,6 +996,35 @@ function getAlltimeLevelRecords(level) {
     return [...current, ...archived].sort((a, b) => a.score - b.score);
 }
 
+// Supabase 레코드 → 표시 형식 변환
+function mapSupabaseRecord(row) {
+    return {
+        name:        row.player_name,
+        difficulty:  row.difficulty,
+        diffName:    row.diff_name,
+        tier:        row.tier,
+        timeSeconds: row.time_seconds,
+        hintsUsed:   row.hints_used,
+        score:       row.score,
+        date:        row.created_at ? new Date(row.created_at).toLocaleDateString('ko-KR') : '-',
+        supabaseId:  row.id,
+    };
+}
+
+// 이번 달 1일 00:00 UTC ISO 문자열
+function getCurrentMonthIso() {
+    const d = new Date();
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+}
+
+// Supabase 실패 시 localStorage 폴백
+function getLocalFallbackRecords(tab, level) {
+    if (tab === 'level')      return getCurrentSeasonRecords().filter(r => r.difficulty === level).sort((a, b) => a.score - b.score);
+    if (tab === 'all')        return getCurrentSeasonRecords().sort((a, b) => a.score - b.score);
+    if (tab === 'alltime')    return getAlltimeLevelRecords(level);
+    return getAlltimeAllRecords();
+}
+
 function renderHofRecords(records, showLevel = false, showSeason = false) {
     const container = document.getElementById('hof-records');
     if (records.length === 0) {
@@ -997,7 +1037,10 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
         const rankIcon    = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
         const levelBadge  = showLevel  ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
         const seasonBadge = showSeason && r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
-        const isCurrent   = lastSavedRecord && r.savedAt && r.savedAt === lastSavedRecord.savedAt;
+        const isCurrent   = lastSavedRecord && (
+            (lastSavedRecord.supabaseId && r.supabaseId && r.supabaseId === lastSavedRecord.supabaseId) ||
+            (!lastSavedRecord.supabaseId && r.savedAt && r.savedAt === lastSavedRecord.savedAt)
+        );
         return `
             <div class="lb-entry-row${isCurrent ? ' current-record' : ''}">
                 <span class="lb-rank ${rankClass}">${rankIcon}</span>
@@ -1263,16 +1306,16 @@ function bindEvents() {
 
     // 명예의 전당 탭 전환
     document.querySelectorAll('.hof-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             document.querySelectorAll('.hof-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const level = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
-            renderHofTab(btn.dataset.hoftab, level);
+            await renderHofTab(btn.dataset.hoftab, level);
         });
     });
 
     // 명예의 전당 레벨 필터
-    document.getElementById('hof-level-filter').addEventListener('change', renderHallOfFame);
+    document.getElementById('hof-level-filter').addEventListener('change', () => renderHallOfFame());
 
     // 명예의 전당 관리자 버튼
     document.getElementById('hof-end-season-btn').addEventListener('click', endSeason);

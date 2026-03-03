@@ -68,6 +68,8 @@ const T = {
         seasonEndedAlert:   (n) => `${n}이 종료되어 명예의 전당에 보관됐어요! 새 시즌이 시작됩니다.`,
         confirmClearRecords:'현재 시즌 기록을 모두 삭제할까요?',
         confirmRestart:     '처음 상태로 되돌릴까요? 지금까지의 입력이 지워집니다.',
+        // 로딩
+        hofLoading: '로딩 중...',
         // 퍼센타일
         pct1:    '🥇 이 난이도 최고 기록이에요!',
         pct10:   (p) => `🏆 상위 ${p}%! 정말 대단해요!`,
@@ -135,6 +137,7 @@ const T = {
         seasonEndedAlert:   (n) => `${n} ended and archived! A new season starts now.`,
         confirmClearRecords:'Delete all records for this season?',
         confirmRestart:     'Reset to start? All progress will be lost.',
+        hofLoading: 'Loading...',
         pct1:    '🥇 Best record for this difficulty!',
         pct10:   (p) => `🏆 Top ${p}%! Amazing!`,
         pct25:   (p) => `🎉 Top ${p}%! Great record!`,
