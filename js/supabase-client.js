@@ -16,7 +16,10 @@ function getSupabase() {
 // ── 점수 저장 후 삽입된 id 반환 (하이라이트용)
 async function saveScoreOnline(record) {
     const sb = getSupabase();
-    if (!sb) return null;
+    if (!sb) {
+        console.warn('[Supabase] 클라이언트 초기화 실패 (CDN 로드 확인)');
+        return null;
+    }
     try {
         const { data, error } = await sb.from('scores').insert({
             player_name:  record.name,
@@ -27,9 +30,14 @@ async function saveScoreOnline(record) {
             hints_used:   record.hintsUsed,
             score:        record.score,
         }).select('id').single();
-        if (error) return null;
+        if (error) {
+            console.error('[Supabase] INSERT 오류:', error.code, error.message);
+            // 42501 = RLS 정책 위반 (Supabase 대시보드에서 INSERT 정책 추가 필요)
+            return null;
+        }
         return data; // { id }
     } catch (e) {
+        console.error('[Supabase] INSERT 예외:', e);
         return null;
     }
 }
@@ -51,9 +59,13 @@ async function loadGlobalScores({ level = null, sinceIso = null, limit = 1000 } 
         if (sinceIso !== null) q = q.gte('created_at', sinceIso);
 
         const { data, error } = await q;
-        if (error) return [];
+        if (error) {
+            console.error('[Supabase] SELECT 오류:', error.code, error.message);
+            return null; // null 반환 → 로컬 폴백 사용
+        }
         return data;
     } catch (e) {
-        return [];
+        console.error('[Supabase] SELECT 예외:', e);
+        return null;
     }
 }

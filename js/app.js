@@ -345,15 +345,26 @@ function showStartScreen() {
     document.getElementById('start-screen').classList.remove('hidden');
 }
 
-async function showHofOverlay(showSaveBanner = false) {
+// bannerState: null(숨김) | 'success'(성공) | 'error'(실패)
+async function showHofOverlay(bannerState = null) {
     const levelFilter = document.getElementById('hof-level-filter');
     if (levelFilter) levelFilter.value = Game.difficulty;
     // 기본 탭: 시즌·전체레벨 (index 1 = 'all')
     document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 1));
 
-    // 저장 성공 배너 제어
+    // 저장 결과 배너 제어
     const banner = document.getElementById('hof-save-banner');
-    if (banner) banner.classList.toggle('hidden', !showSaveBanner);
+    if (banner) {
+        banner.classList.remove('hidden', 'save-error');
+        if (bannerState === 'success') {
+            banner.textContent = t('hofSaveBanner');
+        } else if (bannerState === 'error') {
+            banner.textContent = t('hofSaveBannerError');
+            banner.classList.add('save-error');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
 
     // 오버레이 즉시 표시 (기록은 비동기로 로드)
     document.getElementById('hof-overlay').classList.remove('hidden');
@@ -830,7 +841,15 @@ async function saveRecord(name) {
 
     // Supabase 저장 (await → 삽입된 id 수신)
     const onlineData = await saveScoreOnline(record);
-    lastSavedRecord = onlineData ? { supabaseId: onlineData.id } : null;
+    const bannerState = onlineData ? 'success' : 'error';
+
+    if (onlineData) {
+        // 온라인 저장 성공 → supabaseId로 현재 기록 추적
+        lastSavedRecord = { supabaseId: onlineData.id };
+    } else {
+        // 온라인 저장 실패 → savedAt으로 로컬 기록 추적 (폴백 표시용)
+        lastSavedRecord = { savedAt: record.savedAt };
+    }
 
     // 저장 버튼 복원
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('saveBtn'); }
@@ -845,9 +864,9 @@ async function saveRecord(name) {
 
     stopConfetti();
 
-    // 축하 화면 닫고 명예의 전당 오픈 (저장 성공 배너 포함)
+    // 축하 화면 닫고 명예의 전당 오픈 (저장 결과 배너 포함)
     document.getElementById('celebration-overlay').classList.add('hidden');
-    showHofOverlay(true);
+    showHofOverlay(bannerState);
 }
 
 function showRankToast(msg) {
@@ -1197,7 +1216,10 @@ function applyTranslations() {
     const hofTitle = document.getElementById('hof-title');
     if (hofTitle) hofTitle.textContent = t('hofTitle');
     const hofSaveBanner = document.getElementById('hof-save-banner');
-    if (hofSaveBanner) hofSaveBanner.textContent = t('hofSaveBanner');
+    // 에러 상태는 덮어쓰지 않음 (성공 배너만 번역 업데이트)
+    if (hofSaveBanner && !hofSaveBanner.classList.contains('save-error')) {
+        hofSaveBanner.textContent = t('hofSaveBanner');
+    }
     const hofSameLevelBtn = document.getElementById('hof-same-level-btn');
     if (hofSameLevelBtn) hofSameLevelBtn.textContent = t('hofSameLevel');
     const hofHomeBtn = document.getElementById('hof-home-btn');

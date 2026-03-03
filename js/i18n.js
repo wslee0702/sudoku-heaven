@@ -51,6 +51,7 @@ const T = {
         // 명예의 전당
         hofTitle:       '🏆 명예의 전당',
         hofSaveBanner:  '✅ 기록이 저장됐어요!',
+        hofSaveBannerError: '⚠️ 온라인 저장 실패 — 기기에만 저장됐어요. Supabase RLS 정책을 확인하세요.',
         hofSameLevel:   '↺ 같은 난이도 새 게임',
         hofHome:        '🏠 홈',
         tabSeasonAll:   '전체',
@@ -121,6 +122,7 @@ const T = {
         unitSec:        's',
         hofTitle:       '🏆 Hall of Fame',
         hofSaveBanner:  '✅ Record saved!',
+        hofSaveBannerError: '⚠️ Online save failed — saved on this device only. Check Supabase RLS policy.',
         hofSameLevel:   '↺ New Game (Same Level)',
         hofHome:        '🏠 Home',
         tabSeasonAll:   'All',
