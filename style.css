@@ -804,6 +804,38 @@ body {
     flex-shrink: 0;
 }
 
+/* 현재 기록 하이라이트 */
+.lb-entry-row.current-record {
+    background: #FFFBEB;
+    border-left: 3px solid #F59E0B;
+    font-weight: 700;
+}
+.lb-entry-row.current-record .lb-name { color: #B45309; }
+
+/* 순위 알림 토스트 */
+.rank-toast {
+    position: fixed;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #7C3AED, #2563EB);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 40px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    box-shadow: 0 8px 28px rgba(124, 58, 237, 0.4);
+    z-index: 400;
+    white-space: nowrap;
+    animation: toastIn 0.4s ease-out;
+    pointer-events: none;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* 저장 성공 메시지 */
 .save-success-msg {
     font-size: 1rem;

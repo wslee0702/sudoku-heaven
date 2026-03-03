@@ -7,6 +7,10 @@ const cellEls = [];
 const flashingCells  = new Set(); // 'r,c' 형태
 const flashingFinals = new Set(); // 전체 완성 플래시용
 
+// ── 마지막 저장 기록 (HoF 하이라이트용)
+let lastSavedRecord  = null;
+let rankToastTimer   = null;
+
 // ── 게임 상태
 const Game = {
     board:        null,   // 9x9 현재 보드 (0=빈칸)
@@ -357,6 +361,7 @@ function showHofOverlay(showSaveBanner = false) {
 
 function hideHofOverlay() {
     document.getElementById('hof-overlay').classList.add('hidden');
+    lastSavedRecord = null; // 다음 오픈 시 하이라이트 초기화
 }
 
 function hideStartScreen() {
@@ -805,13 +810,23 @@ function saveRecord(name) {
         timeSeconds: Game.timerSeconds,
         hintsUsed,
         score,
-        date: new Date().toLocaleDateString('ko-KR'),
+        date:    new Date().toLocaleDateString('ko-KR'),
+        savedAt: Date.now(), // 하이라이트 + 순위 알림용 고유 ID
     };
 
     const records = getCurrentSeasonRecords();
     records.push(record);
     records.sort((a, b) => a.score - b.score);
     saveCurrentSeasonRecords(records);
+
+    // 현재 레벨 시즌 순위 확인 → 10위 이내면 토스트 알림
+    lastSavedRecord = record;
+    const levelRecords = records.filter(r => r.difficulty === record.difficulty);
+    const rank = levelRecords.findIndex(r => r.savedAt === record.savedAt) + 1;
+    if (rank > 0 && rank <= 10) {
+        const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆';
+        showRankToast(`${emoji} Lv.${record.difficulty} 시즌 ${rank}위 달성!`);
+    }
 
     // 전 세계 기록에도 저장 (실패해도 로컬은 이미 저장됨)
     saveScoreOnline(record);
@@ -821,6 +836,14 @@ function saveRecord(name) {
     // 저장 즉시: 축하 화면 닫고 명예의 전당 오픈 (상단에 저장 성공 배너 표시)
     document.getElementById('celebration-overlay').classList.add('hidden');
     showHofOverlay(true);
+}
+
+function showRankToast(msg) {
+    const toast = document.getElementById('rank-toast');
+    document.getElementById('rank-toast-msg').textContent = msg;
+    toast.classList.remove('hidden');
+    clearTimeout(rankToastTimer);
+    rankToastTimer = setTimeout(() => toast.classList.add('hidden'), 4500);
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -961,12 +984,13 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
     }
 
     const rowsHtml = records.map((r, i) => {
-        const rankClass  = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-        const rankIcon   = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+        const rankClass   = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const rankIcon    = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
         const levelBadge  = showLevel  ? `<span class="post-level-tag">Lv.${r.difficulty}</span>` : '';
         const seasonBadge = showSeason && r.seasonName ? `<span class="post-level-tag">${r.seasonName}</span>` : '';
+        const isCurrent   = lastSavedRecord && r.savedAt && r.savedAt === lastSavedRecord.savedAt;
         return `
-            <div class="lb-entry-row">
+            <div class="lb-entry-row${isCurrent ? ' current-record' : ''}">
                 <span class="lb-rank ${rankClass}">${rankIcon}</span>
                 <span class="lb-name">${r.name}${levelBadge}${seasonBadge}</span>
                 <span>${r.diffName || ''} Lv.${r.difficulty}</span>
@@ -987,6 +1011,14 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
             ${rowsHtml}
         </div>
     `;
+
+    // 현재 기록 행이 있으면 스크롤
+    if (lastSavedRecord) {
+        setTimeout(() => {
+            const currentEl = container.querySelector('.current-record');
+            if (currentEl) currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+    }
 }
 
 // ===================== 컨페티 =====================
@@ -1057,8 +1089,8 @@ function bindStartScreen() {
         });
     });
 
-    // 명예의 전당 바로가기
-    document.getElementById('start-hof-btn').addEventListener('click', showHofOverlay);
+    // 명예의 전당 바로가기 (인자 없이 호출해야 배너가 숨겨짐)
+    document.getElementById('start-hof-btn').addEventListener('click', () => showHofOverlay());
 }
 
 // ===================== 이벤트 바인딩 =====================
