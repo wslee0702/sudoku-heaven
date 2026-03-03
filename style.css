@@ -44,6 +44,8 @@ body {
     line-height: 1.5;
 }
 
+.hidden { display: none; }
+
 /* ===================== 시작 화면 ===================== */
 .fullscreen-overlay {
     position: fixed;
@@ -185,6 +187,30 @@ body {
     text-underline-offset: 3px;
 }
 .btn-link:hover { color: var(--primary); }
+
+/* 언어 토글 버튼 */
+.lang-toggle {
+    display: flex;
+    gap: 6px;
+    align-self: flex-end;
+}
+.lang-btn {
+    padding: 4px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+}
+.lang-btn:hover { border-color: var(--primary); color: var(--primary); }
+.lang-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
 
 /* ===================== 레이아웃 ===================== */
 #app {
@@ -827,8 +853,12 @@ body {
     box-shadow: 0 8px 28px rgba(124, 58, 237, 0.4);
     z-index: 400;
     white-space: nowrap;
-    animation: toastIn 0.4s ease-out;
     pointer-events: none;
+    display: none;
+}
+.rank-toast.active {
+    display: block;
+    animation: toastIn 0.4s ease-out;
 }
 
 @keyframes toastIn {

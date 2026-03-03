@@ -361,7 +361,8 @@ function showHofOverlay(showSaveBanner = false) {
 
 function hideHofOverlay() {
     document.getElementById('hof-overlay').classList.add('hidden');
-    lastSavedRecord = null; // 다음 오픈 시 하이라이트 초기화
+    hideRankToast();
+    lastSavedRecord = null;
 }
 
 function hideStartScreen() {
@@ -371,6 +372,7 @@ function hideStartScreen() {
 function newGame(levelOverride) {
     if (Game.timerInterval) clearInterval(Game.timerInterval);
 
+    hideRankToast();
     hideStartScreen();
     stopConfetti();
 
@@ -414,7 +416,7 @@ function newGame(levelOverride) {
 
 function restartGame() {
     if (!Game.initialBoard) return;
-    if (!confirm('처음 상태로 되돌릴까요? 지금까지의 입력이 지워집니다.')) return;
+    if (!confirm(t('confirmRestart'))) return;
 
     if (Game.timerInterval) clearInterval(Game.timerInterval);
 
@@ -622,8 +624,9 @@ function useHint() {
 }
 
 function updateHintBtn() {
-    document.getElementById('hints-left').textContent = Game.hintsLeft;
-    document.getElementById('hint-btn').disabled = Game.hintsLeft <= 0;
+    const btn = document.getElementById('hint-btn');
+    btn.innerHTML = `${t('hintPrefix')}<span id="hints-left">${Game.hintsLeft}</span>`;
+    btn.disabled = Game.hintsLeft <= 0;
 }
 
 // ===================== 메모 모드 =====================
@@ -637,10 +640,10 @@ function updateMemoBtn() {
     const btn = document.getElementById('memo-btn');
     if (Game.memoMode) {
         btn.classList.add('active');
-        btn.textContent = '✏️ 메모 ON';
+        btn.textContent = t('memoOn');
     } else {
         btn.classList.remove('active');
-        btn.textContent = '✏️ 메모';
+        btn.textContent = t('memoOff');
     }
 }
 
@@ -693,7 +696,7 @@ function showLoading(show) {
 function updateDifficultyDisplay(level) {
     const info  = SudokuEngine.getDifficultyInfo(level);
     const badge = document.getElementById('game-diff-badge');
-    if (badge) badge.textContent = `${info.name} Lv.${level}`;
+    if (badge) badge.textContent = `${translateDiffName(info.name)} Lv.${level}`;
 }
 
 // ===================== 시즌 관리 =====================
@@ -753,10 +756,10 @@ function archiveSeason(season) {
 
 function endSeason() {
     const season = getCurrentSeason();
-    if (!confirm(`"${season.name}"을 종료하고 명예의 전당에 보관할까요?\n새 시즌이 바로 시작됩니다.`)) return;
+    if (!confirm(t('confirmEndSeason', season.name))) return;
     archiveSeason(season);
     renderHallOfFame();
-    alert(`${season.name}이 종료되어 명예의 전당에 보관됐어요! 새 시즌이 시작됩니다.`);
+    alert(t('seasonEndedAlert', season.name));
 }
 
 function getArchive() {
@@ -825,7 +828,7 @@ function saveRecord(name) {
     const rank = levelRecords.findIndex(r => r.savedAt === record.savedAt) + 1;
     if (rank > 0 && rank <= 10) {
         const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆';
-        showRankToast(`${emoji} Lv.${record.difficulty} 시즌 ${rank}위 달성!`);
+        showRankToast(t('rankToast', emoji, record.difficulty, rank));
     }
 
     // 전 세계 기록에도 저장 (실패해도 로컬은 이미 저장됨)
@@ -841,9 +844,15 @@ function saveRecord(name) {
 function showRankToast(msg) {
     const toast = document.getElementById('rank-toast');
     document.getElementById('rank-toast-msg').textContent = msg;
-    toast.classList.remove('hidden');
+    toast.classList.add('active');
     clearTimeout(rankToastTimer);
-    rankToastTimer = setTimeout(() => toast.classList.add('hidden'), 4500);
+    rankToastTimer = setTimeout(() => hideRankToast(), 4500);
+}
+
+function hideRankToast() {
+    document.getElementById('rank-toast').classList.remove('active');
+    clearTimeout(rankToastTimer);
+    rankToastTimer = null;
 }
 
 function getPercentileMessage(score, tier, records) {
@@ -853,11 +862,11 @@ function getPercentileMessage(score, tier, records) {
     const worseThan  = same.filter(r => r.score > score).length;
     const topPct     = Math.round((1 - worseThan / same.length) * 100);
 
-    if (topPct <= 1)  return `🥇 이 난이도 최고 기록이에요!`;
-    if (topPct <= 10) return `🏆 상위 ${topPct}%! 정말 대단해요!`;
-    if (topPct <= 25) return `🎉 상위 ${topPct}%의 훌륭한 기록이에요!`;
-    if (topPct <= 50) return `👍 상위 ${topPct}%의 기록이에요!`;
-    return `📊 상위 ${topPct}%의 기록이에요. 더 잘할 수 있어요!`;
+    if (topPct <= 1)  return t('pct1');
+    if (topPct <= 10) return t('pct10', topPct);
+    if (topPct <= 25) return t('pct25', topPct);
+    if (topPct <= 50) return t('pct50', topPct);
+    return t('pctOther', topPct);
 }
 
 function escapeHtml(str) {
@@ -874,9 +883,9 @@ function showCelebration() {
     const diffInfo  = SudokuEngine.getDifficultyInfo(Game.difficulty);
 
     document.getElementById('final-time').textContent       = formatTime(Game.timerSeconds);
-    document.getElementById('final-difficulty').textContent = `${diffInfo.name} Lv.${Game.difficulty}`;
-    document.getElementById('final-hints').textContent      = `${hintsUsed}개`;
-    document.getElementById('final-score').textContent      = `${score}초`;
+    document.getElementById('final-difficulty').textContent = `${translateDiffName(diffInfo.name)} Lv.${Game.difficulty}`;
+    document.getElementById('final-hints').textContent      = `${hintsUsed}${t('unitHints')}`;
+    document.getElementById('final-score').textContent      = `${score}${t('unitSec')}`;
 
     const records = getCurrentSeasonRecords();
     const pctMsg  = getPercentileMessage(score, diffInfo.tier, records);
@@ -907,11 +916,11 @@ function renderHallOfFame() {
 
     // 탭 레이블 업데이트
     document.querySelectorAll('.hof-tab').forEach(btn => {
-        const t = btn.dataset.hoftab;
-        if (t === 'level')      btn.textContent = `${seasonLabel} · Lv.${level}`;
-        if (t === 'all')        btn.textContent = `${seasonLabel} · 전체`;
-        if (t === 'alltime')    btn.textContent = `역대 · Lv.${level}`;
-        if (t === 'alltimeall') btn.textContent = `역대 · 전체`;
+        const tab = btn.dataset.hoftab;
+        if (tab === 'level')      btn.textContent = `${seasonLabel} · Lv.${level}`;
+        if (tab === 'all')        btn.textContent = `${seasonLabel} · ${t('tabSeasonAll')}`;
+        if (tab === 'alltime')    btn.textContent = `${t('tabAlltime')} · Lv.${level}`;
+        if (tab === 'alltimeall') btn.textContent = `${t('tabAlltime')} · ${t('tabSeasonAll')}`;
     });
 
     const activeTab = document.querySelector('.hof-tab.active');
@@ -979,7 +988,7 @@ function getAlltimeLevelRecords(level) {
 function renderHofRecords(records, showLevel = false, showSeason = false) {
     const container = document.getElementById('hof-records');
     if (records.length === 0) {
-        container.innerHTML = '<div class="lb-empty">아직 기록이 없어요!</div>';
+        container.innerHTML = `<div class="lb-empty">${t('noRecords')}</div>`;
         return;
     }
 
@@ -993,10 +1002,10 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
             <div class="lb-entry-row${isCurrent ? ' current-record' : ''}">
                 <span class="lb-rank ${rankClass}">${rankIcon}</span>
                 <span class="lb-name">${r.name}${levelBadge}${seasonBadge}</span>
-                <span>${r.diffName || ''} Lv.${r.difficulty}</span>
+                <span>${translateDiffName(r.diffName || '')} Lv.${r.difficulty}</span>
                 <span class="lb-time">${formatTime(r.timeSeconds)}</span>
-                <span>${r.hintsUsed}개</span>
-                <span class="lb-score">${r.score}초</span>
+                <span>${r.hintsUsed}${t('unitHints')}</span>
+                <span class="lb-score">${r.score}${t('unitSec')}</span>
                 <span class="lb-date">${r.date}</span>
             </div>
         `;
@@ -1005,8 +1014,8 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
     container.innerHTML = `
         <div class="lb-table-wrap">
             <div class="lb-header-row">
-                <span>순위</span><span>닉네임</span><span>난이도</span>
-                <span>시간</span><span>힌트</span><span>점수</span><span>날짜</span>
+                <span>${t('colRank')}</span><span>${t('colName')}</span><span>${t('colDiff')}</span>
+                <span>${t('colTime')}</span><span>${t('colHints')}</span><span>${t('colScore')}</span><span>${t('colDate')}</span>
             </div>
             ${rowsHtml}
         </div>
@@ -1078,6 +1087,95 @@ function stopConfetti() {
     document.getElementById('confetti-canvas').style.display = 'none';
 }
 
+// ===================== 다국어 적용 =====================
+
+function applyTranslations() {
+    // 시작 화면
+    const subtitle = document.querySelector('.start-subtitle');
+    if (subtitle) subtitle.textContent = t('subtitle');
+    const hofBtn = document.getElementById('start-hof-btn');
+    if (hofBtn) hofBtn.textContent = t('hofLink');
+    document.querySelectorAll('.level-btn').forEach(btn => {
+        const lv = parseInt(btn.dataset.level);
+        const nameEl = btn.querySelector('.lbtn-name');
+        if (nameEl) nameEl.textContent = t('tierNames')[lv - 1] || '';
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === currentLang);
+    });
+
+    // 게임 액션 버튼
+    const restartBtn = document.getElementById('restart-btn');
+    if (restartBtn) restartBtn.textContent = t('restart');
+    const sameLevelBtn = document.getElementById('same-level-btn');
+    if (sameLevelBtn) sameLevelBtn.textContent = t('sameLevel');
+    const homeBtn = document.getElementById('home-btn');
+    if (homeBtn) homeBtn.textContent = t('home');
+
+    // 사이드 패널
+    updateMemoBtn();
+    const errorLabel = document.querySelector('.toggle-pill-label span');
+    if (errorLabel) errorLabel.textContent = t('errorCheck');
+    updateHintBtn();
+
+    // 키보드 도움말
+    const kbTitle = document.querySelector('.keyboard-help p');
+    if (kbTitle) kbTitle.textContent = t('kbTitle');
+    const kbList = document.querySelector('.keyboard-help ul');
+    if (kbList) kbList.innerHTML = t('kbItems').map(item => `<li>${item}</li>`).join('');
+
+    // 로딩 오버레이
+    const loadingMsg = document.querySelector('#loading-overlay .overlay-msg');
+    if (loadingMsg) loadingMsg.innerHTML = `${t('loadingMsg')}<br><small>${t('loadingHard')}</small>`;
+
+    // 일시정지 오버레이
+    const pauseH2 = document.querySelector('#pause-overlay h2');
+    if (pauseH2) pauseH2.textContent = t('pausedTitle');
+    const pauseP = document.querySelector('#pause-overlay p');
+    if (pauseP) pauseP.textContent = t('pausedMsg');
+    const resumeBtn = document.getElementById('resume-btn');
+    if (resumeBtn) resumeBtn.textContent = t('resumeBtn');
+
+    // 축하 오버레이
+    const celebH2 = document.querySelector('.celeb-header h2');
+    if (celebH2) celebH2.textContent = t('celebComplete');
+    const statLabels = document.querySelectorAll('.stat-label');
+    ['statTime', 'statDiff', 'statHints', 'statScore'].forEach((key, i) => {
+        if (statLabels[i]) statLabels[i].textContent = t(key);
+    });
+    const saveLabel = document.querySelector('.save-label');
+    if (saveLabel) saveLabel.textContent = t('saveLabel');
+    const playerName = document.getElementById('player-name');
+    if (playerName) playerName.placeholder = t('savePlaceholder');
+    const saveBtn = document.getElementById('save-score-btn');
+    if (saveBtn) saveBtn.textContent = t('saveBtn');
+
+    // 명예의 전당 오버레이
+    const hofTitle = document.getElementById('hof-title');
+    if (hofTitle) hofTitle.textContent = t('hofTitle');
+    const hofSaveBanner = document.getElementById('hof-save-banner');
+    if (hofSaveBanner) hofSaveBanner.textContent = t('hofSaveBanner');
+    const hofSameLevelBtn = document.getElementById('hof-same-level-btn');
+    if (hofSameLevelBtn) hofSameLevelBtn.textContent = t('hofSameLevel');
+    const hofHomeBtn = document.getElementById('hof-home-btn');
+    if (hofHomeBtn) hofHomeBtn.textContent = t('hofHome');
+    const hofLevelFilter = document.getElementById('hof-level-filter');
+    if (hofLevelFilter) {
+        const options = t('hofLevelOptions');
+        hofLevelFilter.querySelectorAll('option').forEach((opt, i) => {
+            if (options[i]) opt.textContent = options[i];
+        });
+    }
+
+    // 난이도 배지
+    updateDifficultyDisplay(Game.difficulty);
+
+    // HoF가 열려 있으면 재렌더링
+    if (!document.getElementById('hof-overlay').classList.contains('hidden')) {
+        renderHallOfFame();
+    }
+}
+
 // ===================== 시작 화면 이벤트 =====================
 
 function bindStartScreen() {
@@ -1091,6 +1189,11 @@ function bindStartScreen() {
 
     // 명예의 전당 바로가기 (인자 없이 호출해야 배너가 숨겨짐)
     document.getElementById('start-hof-btn').addEventListener('click', () => showHofOverlay());
+
+    // 언어 토글
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+    });
 }
 
 // ===================== 이벤트 바인딩 =====================
@@ -1174,7 +1277,7 @@ function bindEvents() {
     // 명예의 전당 관리자 버튼
     document.getElementById('hof-end-season-btn').addEventListener('click', endSeason);
     document.getElementById('hof-clear-records-btn').addEventListener('click', () => {
-        if (confirm('현재 시즌 기록을 모두 삭제할까요?')) {
+        if (confirm(t('confirmClearRecords'))) {
             const season = getCurrentSeason();
             localStorage.removeItem(getSeasonRecordsKey(season.id));
             renderHallOfFame();
@@ -1299,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
     bindStartScreen();
 
-    updateDifficultyDisplay(Game.difficulty);
+    applyTranslations();       // 저장된 언어로 UI 초기화
     updateUndoRedoBtns();
 
     // 시작 화면 표시 (게임은 시작 화면에서 시작)
