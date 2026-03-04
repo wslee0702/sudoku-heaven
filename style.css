@@ -37,34 +37,35 @@
     --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
 }
 
-/* ===================== 다크 모드 ===================== */
+/* ===================== 다크 모드 (One Dark 기반) ===================== */
 [data-theme="dark"] {
-    --primary:        #5BA4F5;
-    --primary-dark:   #4090E8;
-    --primary-light:  #1D3348;
-    --bg:             #1B1E22;   /* 차콜 그레이 (기존 네이비 블랙 → 중립적 어두운 회색) */
-    --surface:        #24282E;   /* 카드/패널 */
-    --border:         #2E343C;   /* 구분선 (더 낮은 대비) */
-    --border-strong:  #5A7080;   /* 스도쿠 박스 경계선 (덜 강렬하게) */
-    --text:           #B4BEC8;   /* 본문 (눈부심 줄인 회청색) */
-    --text-muted:     #667685;   /* 보조 텍스트 */
+    /* One Dark 팔레트: 수백만 명이 장시간 사용, 눈 피로 최소화 */
+    --primary:        #61AFEF;   /* One Dark blue */
+    --primary-dark:   #4D9FDF;
+    --primary-light:  #1B2D42;
+    --bg:             #21252B;   /* One Dark background */
+    --surface:        #282C34;   /* One Dark panel/card */
+    --border:         #383D4A;   /* indent guide */
+    --border-strong:  #5C6470;   /* 3x3 박스선: 충분히 보이되 자연스럽게 */
+    --text:           #ABB2BF;   /* One Dark text: 검증된 가독성 */
+    --text-muted:     #7A8494;   /* 보조 텍스트 */
 
-    --cell-selected:     #1D3D5C;  /* 선택된 셀 */
-    --cell-highlight:    #2B3440;  /* 같은 행/열/박스 */
-    --cell-same-num:     #1A3454;  /* 같은 숫자 */
-    --cell-numpad-match: #153D72;  /* 키패드 선택 숫자 */
-    --cell-given-text:   #B4BEC8;
-    --cell-user-text:    #5BA4F5;
-    --cell-hint-text:    #4ADE80;
-    --cell-hint-bg:      #14291D;
-    --cell-error-text:   #F87171;
-    --cell-error-bg:     #3A1818;
-    --memo-color:        #C4D8E8;
-    --memo-highlight:   #60A5FA;
-    --cell-border:      #2C3138;   /* 셀 얇은 경계선: 매우 subtle */
+    --cell-selected:     #1E3D60;  /* 선택된 셀 */
+    --cell-highlight:    #2A2F3A;  /* 같은 행/열/박스 */
+    --cell-same-num:     #1A3456;  /* 같은 숫자 */
+    --cell-numpad-match: #1A3C7A;  /* 키패드 선택 숫자 */
+    --cell-given-text:   #ABB2BF;
+    --cell-user-text:    #61AFEF;
+    --cell-hint-text:    #98C379;  /* One Dark green: 덜 형광 */
+    --cell-hint-bg:      #162414;
+    --cell-error-text:   #E06C75;  /* One Dark red: 덜 자극적 */
+    --cell-error-bg:     #2D1218;
+    --memo-color:        #B0BCC8;
+    --memo-highlight:    #61AFEF;
+    --cell-border:       #2D3139;  /* 셀 얇은 경계선: 매우 subtle */
 
-    --shadow:    0 2px 8px rgba(0,0,0,0.35);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
+    --shadow:    0 2px 8px rgba(0,0,0,0.40);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.50);
 }
 
 body {

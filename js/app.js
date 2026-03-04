@@ -227,14 +227,29 @@ async function fetchSeasonRank() {
 }
 
 async function shareResult() {
-    // 모달 먼저 열고 로딩 표시
-    document.getElementById('share-preview').src = '';
     document.getElementById('share-modal').classList.remove('hidden');
 
-    const rank   = await fetchSeasonRank();
-    const canvas = buildShareCanvas(rank);
-    _shareCanvas = canvas;
-    document.getElementById('share-preview').src = canvas.toDataURL('image/png');
+    // 1단계: 즉시 이미지 생성 (rank 없이)
+    try {
+        const canvas = buildShareCanvas(null);
+        _shareCanvas = canvas;
+        document.getElementById('share-preview').src = canvas.toDataURL('image/png');
+    } catch (e) {
+        console.error('[Share] 이미지 생성 실패:', e);
+        return;
+    }
+
+    // 2단계: 백그라운드에서 순위 가져와서 이미지 업데이트
+    try {
+        const rank = await fetchSeasonRank();
+        if (rank != null) {
+            const canvas = buildShareCanvas(rank);
+            _shareCanvas = canvas;
+            document.getElementById('share-preview').src = canvas.toDataURL('image/png');
+        }
+    } catch (e) {
+        console.warn('[Share] 순위 조회 실패, 순위 없는 이미지 유지');
+    }
 }
 
 async function copyShareText() {
