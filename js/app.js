@@ -223,9 +223,7 @@ function buildShareText(rank) {
 async function fetchSeasonRank() {
     const hintsUsed = 5 - Game.hintsLeft;
     const score     = Game.timerSeconds + hintsUsed * 60;
-    const rawData   = await loadGlobalScores({ level: Game.difficulty, sinceIso: getCurrentMonthIso(), limit: 1000 });
-    if (!rawData) return null;
-    return rawData.filter(r => r.score < score).length + 1;
+    return getScoreRank(score, Game.difficulty, getCurrentMonthIso());
 }
 
 async function shareResult() {
@@ -235,7 +233,7 @@ async function shareResult() {
 
     const rank   = await fetchSeasonRank();
     const canvas = buildShareCanvas(rank);
-    document._shareCanvas = canvas;
+    _shareCanvas = canvas;
     document.getElementById('share-preview').src = canvas.toDataURL('image/png');
 }
 
@@ -326,7 +324,7 @@ function createBoardDOM() {
             if (r === 2 || r === 5) cell.classList.add('thick-bottom');
             cell.addEventListener('click', () => {
                 const now = Date.now();
-                const isDbl = lastTap.r === r && lastTap.c === c && (now - lastTap.t) < 350;
+                const isDbl = lastTap.r === r && lastTap.c === c && (now - lastTap.t) < 450;
                 lastTap = { r, c, t: now };
                 // 더블클릭/더블탭 → 칸 지우기
                 if (isDbl && !Game.paused && !Game.completed
@@ -715,6 +713,9 @@ function hideStartScreen() {
     document.getElementById('start-screen').classList.add('hidden');
 }
 
+let _generationId  = 0;    // 경합 상태 방지용
+let _shareCanvas   = null; // 공유 이미지 캔버스 (다운로드용)
+
 function newGame(levelOverride) {
     if (Game.timerInterval) clearInterval(Game.timerInterval);
 
@@ -723,6 +724,7 @@ function newGame(levelOverride) {
     stopConfetti();
 
     const level = levelOverride !== undefined ? levelOverride : Game.difficulty;
+    const genId = ++_generationId; // 이 호출의 고유 ID
 
     Game.difficulty = level;
     Game.completed  = false;
@@ -745,15 +747,15 @@ function newGame(levelOverride) {
     document.getElementById('error-count').textContent = '0';
 
     updateDifficultyDisplay(level);
-
     updateMemoBtn();
     updateHintBtn();
     updateUndoRedoBtns();
     updateNumpadUI();
-
     showLoading(true);
 
     setTimeout(() => {
+        if (genId !== _generationId) return; // 더 최근 호출이 있으면 무시
+
         const { puzzle, solution } = SudokuEngine.createPuzzle(level);
 
         Game.board    = puzzle.map(row => [...row]);
@@ -1274,7 +1276,8 @@ function getPercentileMessage(score, tier, records) {
     if (topPct <= 10) return t('pct10', topPct);
     if (topPct <= 25) return t('pct25', topPct);
     if (topPct <= 50) return t('pct50', topPct);
-    return t('pctOther', topPct);
+    if (topPct <= 75) return t('pctOther', topPct);
+    return t('pctLow');
 }
 
 function escapeHtml(str) {
@@ -1317,9 +1320,9 @@ async function renderHallOfFame() {
     const level  = parseInt(document.getElementById('hof-level-filter').value) || Game.difficulty;
 
     const d   = new Date();
-    const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-    // 시즌 레이블 = 이번 달 (전 세계 공통 기준)
-    const seasonLabel = `${d.getFullYear()} ${mon}`;
+    // 시즌 레이블 = UTC 기준 이번 달 (Supabase sinceIso와 동일 기준)
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const seasonLabel = `${d.getUTCFullYear()} ${MONTHS[d.getUTCMonth()]}`;
 
     document.getElementById('hof-season-label').textContent = seasonLabel;
 
@@ -1409,7 +1412,7 @@ function getAlltimeLevelRecords(level) {
 // Supabase 레코드 → 표시 형식 변환
 function mapSupabaseRecord(row) {
     return {
-        name:        row.player_name,
+        name:        escapeHtml(row.player_name || ''),
         difficulty:  row.difficulty,
         diffName:    row.diff_name,
         tier:        row.tier,
@@ -1727,7 +1730,7 @@ function bindEvents() {
             document.getElementById('share-modal').classList.add('hidden');
     });
     document.getElementById('share-download-btn').addEventListener('click', () => {
-        const canvas = document._shareCanvas;
+        const canvas = _shareCanvas;
         if (!canvas) return;
         const a = document.createElement('a');
         a.download = `sudoku-heaven-${Game.isDaily ? Game.dailyDate : `lv${Game.difficulty}`}.png`;
@@ -1754,9 +1757,17 @@ function bindEvents() {
     const flagPicker = document.getElementById('flag-picker');
     flagBtn.addEventListener('click', () => {
         if (flagPicker.classList.contains('hidden')) {
-            const rect = flagBtn.getBoundingClientRect();
-            flagPicker.style.top  = (rect.bottom + 6) + 'px';
-            flagPicker.style.left = rect.left + 'px';
+            const rect        = flagBtn.getBoundingClientRect();
+            const pickerW     = 220;
+            const pickerH     = 260;
+            let top  = rect.bottom + 6;
+            let left = rect.left;
+            // 뷰포트 오른쪽 이탈 방지
+            if (left + pickerW > window.innerWidth - 8) left = window.innerWidth - pickerW - 8;
+            // 뷰포트 아래쪽 이탈 시 위로 띄움
+            if (top + pickerH > window.innerHeight - 8) top = rect.top - pickerH - 6;
+            flagPicker.style.top  = top + 'px';
+            flagPicker.style.left = left + 'px';
             flagPicker.classList.remove('hidden');
         } else {
             flagPicker.classList.add('hidden');

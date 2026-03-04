@@ -77,6 +77,7 @@ const T = {
         pct25:   (p) => `🎉 상위 ${p}%의 훌륭한 기록이에요!`,
         pct50:   (p) => `👍 상위 ${p}%의 기록이에요!`,
         pctOther:(p) => `📊 상위 ${p}%의 기록이에요. 더 잘할 수 있어요!`,
+        pctLow:  '💪 다음엔 더 좋은 기록에 도전해봐요!',
         // 순위 토스트
         rankToast: (emoji, lv, rank) => `${emoji} Lv.${lv} 시즌 ${rank}위 달성!`,
         // 데일리 챌린지
@@ -149,6 +150,7 @@ const T = {
         pct25:   (p) => `🎉 Top ${p}%! Great record!`,
         pct50:   (p) => `👍 Top ${p}%!`,
         pctOther:(p) => `📊 Top ${p}%. You can do better!`,
+        pctLow:  '💪 Keep going — the next one will be better!',
         rankToast: (emoji, lv, rank) => `${emoji} Lv.${lv} Season Rank #${rank}!`,
         // Daily challenge
         dailyBtnText: '📅 Daily Challenge',

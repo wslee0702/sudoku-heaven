@@ -37,30 +37,30 @@
 
 /* ===================== 다크 모드 ===================== */
 [data-theme="dark"] {
-    --primary:        #60A5FA;
-    --primary-dark:   #3B82F6;
-    --primary-light:  #1E3A5F;
-    --bg:             #0F172A;
-    --surface:        #1E293B;
-    --border:         #334155;
-    --border-strong:  #CBD5E1;
-    --text:           #F1F5F9;
-    --text-muted:     #94A3B8;
+    --primary:        #5BA4F5;
+    --primary-dark:   #4090E8;
+    --primary-light:  #1D3348;
+    --bg:             #1B1E22;   /* 차콜 그레이 (기존 네이비 블랙 → 중립적 어두운 회색) */
+    --surface:        #24282E;   /* 카드/패널 */
+    --border:         #353B42;   /* 구분선 */
+    --border-strong:  #8FA4B8;   /* 스도쿠 박스 경계선 */
+    --text:           #DDE3EA;   /* 본문 (순백보다 부드러운 회청백) */
+    --text-muted:     #7F8FA0;   /* 보조 텍스트 */
 
-    --cell-selected:     #1E3A5F;
-    --cell-highlight:    #162840;
-    --cell-same-num:     #162032;
-    --cell-numpad-match: #1D4ED8;
-    --cell-given-text:   #F1F5F9;
-    --cell-user-text:    #60A5FA;
+    --cell-selected:     #1D3D5C;  /* 선택된 셀 */
+    --cell-highlight:    #2B3440;  /* 같은 행/열/박스 */
+    --cell-same-num:     #1A3454;  /* 같은 숫자 */
+    --cell-numpad-match: #153D72;  /* 키패드 선택 숫자 */
+    --cell-given-text:   #DDE3EA;
+    --cell-user-text:    #5BA4F5;
     --cell-hint-text:    #4ADE80;
-    --cell-hint-bg:      #14532D;
+    --cell-hint-bg:      #14291D;
     --cell-error-text:   #F87171;
-    --cell-error-bg:     #7F1D1D;
-    --memo-color:        #64748B;
+    --cell-error-bg:     #3A1818;
+    --memo-color:        #5A6B7A;
 
-    --shadow:    0 2px 8px rgba(0,0,0,0.4);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+    --shadow:    0 2px 8px rgba(0,0,0,0.35);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
 }
 
 body {
