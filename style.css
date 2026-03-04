@@ -28,6 +28,7 @@
     --cell-error-text:  #DC2626;
     --cell-error-bg:    #FEE2E2;
     --memo-color:       #94A3B8;
+    --memo-highlight:   #2563EB;
 
     --radius:    10px;
     --radius-sm: 6px;
@@ -57,7 +58,8 @@
     --cell-hint-bg:      #14291D;
     --cell-error-text:   #F87171;
     --cell-error-bg:     #3A1818;
-    --memo-color:        #5A6B7A;
+    --memo-color:        #8AAABF;
+    --memo-highlight:   #60A5FA;
 
     --shadow:    0 2px 8px rgba(0,0,0,0.35);
     --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
@@ -745,7 +747,7 @@ body {
 
 /* 메모 숫자 하이라이트 (selectedNum 일치 시) */
 .memo-num.memo-highlighted {
-    color: #2563EB;
+    color: var(--memo-highlight);
     font-weight: 900;
     font-size: 0.68rem;
 }
