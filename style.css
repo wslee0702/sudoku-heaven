@@ -27,8 +27,9 @@
     --cell-hint-bg:     #DCFCE7;
     --cell-error-text:  #DC2626;
     --cell-error-bg:    #FEE2E2;
-    --memo-color:       #94A3B8;
+    --memo-color:       #64748B;
     --memo-highlight:   #2563EB;
+    --cell-border:      #B0BEC5;
 
     --radius:    10px;
     --radius-sm: 6px;
@@ -60,6 +61,7 @@
     --cell-error-bg:     #3A1818;
     --memo-color:        #C4D8E8;
     --memo-highlight:   #60A5FA;
+    --cell-border:      #2C3138;   /* 셀 얇은 경계선: 매우 subtle */
 
     --shadow:    0 2px 8px rgba(0,0,0,0.35);
     --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
@@ -518,7 +520,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #B0BEC5;
+    border: 1px solid var(--cell-border);
     cursor: pointer;
     font-size: 1.35rem;
     font-weight: 500;
@@ -596,7 +598,7 @@ body {
 }
 .memo-num {
     font-size: 0.62rem;
-    color: #475569;
+    color: var(--memo-color);
     display: flex;
     align-items: center;
     justify-content: center;
