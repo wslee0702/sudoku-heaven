@@ -53,7 +53,7 @@
     --cell-selected:     #1E3D60;  /* 선택된 셀 */
     --cell-highlight:    #2A2F3A;  /* 같은 행/열/박스 */
     --cell-same-num:     #1A3456;  /* 같은 숫자 */
-    --cell-numpad-match: #1A3C7A;  /* 키패드 선택 숫자 */
+    --cell-numpad-match: #243050;  /* 키패드 선택 숫자 (덜 자극적) */
     --cell-given-text:   #ABB2BF;
     --cell-user-text:    #61AFEF;
     --cell-hint-text:    #98C379;  /* One Dark green: 덜 형광 */
@@ -62,7 +62,7 @@
     --cell-error-bg:     #2D1218;
     --memo-color:        #B0BCC8;
     --memo-highlight:    #61AFEF;
-    --cell-border:       #2D3139;  /* 셀 얇은 경계선: 매우 subtle */
+    --cell-border:       #3D4352;  /* 셀 얇은 경계선: 다크모드 구분 가능 */
 
     --shadow:    0 2px 8px rgba(0,0,0,0.40);
     --shadow-md: 0 4px 16px rgba(0,0,0,0.50);

@@ -382,9 +382,11 @@ function renderCell(r, c) {
         const sameBox = Math.floor(sr / 3) === Math.floor(r / 3) &&
                         Math.floor(sc / 3) === Math.floor(c / 3);
 
-        if (sameRow || sameCol || sameBox) cell.classList.add('highlight');
+        // 선택된 셀이 비어있을 때만 행/열/박스 하이라이트
+        // (채워진 셀 선택 시 주변 강조를 없애 시각적 복잡도 감소)
+        if (selVal === 0 && (sameRow || sameCol || sameBox)) cell.classList.add('highlight');
 
-        // 선택된 셀의 숫자와 같은 숫자 강조
+        // 선택된 셀의 숫자와 같은 숫자 강조 (채워진 셀 선택 시에만)
         if (val !== 0 && selVal !== 0 && val === selVal) {
             cell.classList.add('same-number');
         }
