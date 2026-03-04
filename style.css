@@ -42,16 +42,16 @@
     --primary-light:  #1D3348;
     --bg:             #1B1E22;   /* 차콜 그레이 (기존 네이비 블랙 → 중립적 어두운 회색) */
     --surface:        #24282E;   /* 카드/패널 */
-    --border:         #353B42;   /* 구분선 */
-    --border-strong:  #8FA4B8;   /* 스도쿠 박스 경계선 */
-    --text:           #DDE3EA;   /* 본문 (순백보다 부드러운 회청백) */
-    --text-muted:     #7F8FA0;   /* 보조 텍스트 */
+    --border:         #2E343C;   /* 구분선 (더 낮은 대비) */
+    --border-strong:  #5A7080;   /* 스도쿠 박스 경계선 (덜 강렬하게) */
+    --text:           #B4BEC8;   /* 본문 (눈부심 줄인 회청색) */
+    --text-muted:     #667685;   /* 보조 텍스트 */
 
     --cell-selected:     #1D3D5C;  /* 선택된 셀 */
     --cell-highlight:    #2B3440;  /* 같은 행/열/박스 */
     --cell-same-num:     #1A3454;  /* 같은 숫자 */
     --cell-numpad-match: #153D72;  /* 키패드 선택 숫자 */
-    --cell-given-text:   #DDE3EA;
+    --cell-given-text:   #B4BEC8;
     --cell-user-text:    #5BA4F5;
     --cell-hint-text:    #4ADE80;
     --cell-hint-bg:      #14291D;
@@ -1376,7 +1376,7 @@ body {
     }
 
     /* ── 수도쿠 보드: 화면 너비에 딱 맞게 */
-    .board-wrap { padding: 4px; display: flex; justify-content: center; }
+    .board-wrap { padding: 2px; display: flex; justify-content: center; }
     .sudoku-board {
         width: calc(100vw - 24px);
         height: calc(100vw - 24px);
@@ -1389,20 +1389,23 @@ body {
     /* ── 사이드 패널: 세로 정렬로 깔끔하게 */
     .side-panel {
         flex-direction: column;
-        gap: 10px;
-        padding: 12px;
+        gap: 6px;
+        padding: 8px;
         min-width: unset;
     }
 
-    /* 메모·오답 토글: 가로 한 줄 */
-    .panel-toggles { flex-direction: row; gap: 8px; }
-    .toggle-pill       { flex: 1; }
-    .toggle-pill-label { flex: 1; }
+    /* 메모·오답 토글: 가로 한 줄, 작게 */
+    .panel-toggles { flex-direction: row; gap: 5px; }
+    .toggle-pill       { flex: 1; padding: 5px 8px; font-size: 0.78rem; }
+    .toggle-pill-label { flex: 1; padding: 5px 8px; font-size: 0.78rem; }
 
-    /* 숫자 패드: 더 큰 터치 타깃 */
-    .number-pad { gap: 6px; }
-    .num-btn { min-height: 54px; font-size: 1.35rem; }
-    .erase-btn { font-size: 0.95rem; }
+    /* 숫자 패드: 터치하기 좋은 크기 유지 */
+    .number-pad { gap: 5px; }
+    .num-btn { min-height: 50px; font-size: 1.3rem; }
+    .erase-btn { font-size: 0.9rem; }
+
+    /* 힌트 버튼: 작게 */
+    .btn-hint { padding: 6px; font-size: 0.82rem; }
 
     /* 키보드 단축키 안내: 모바일엔 불필요 → 숨김 */
     .keyboard-help { display: none; }
