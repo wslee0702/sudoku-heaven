@@ -653,6 +653,13 @@ function startDailyChallenge() {
 
 // ===================== 자동 메모 채우기 =====================
 
+function clearAllMemos() {
+    if (Game.completed || !Game.board) return;
+    saveToHistory();
+    Game.memos = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
+    renderBoard();
+}
+
 function autoFillMemos() {
     if (Game.completed || Game.paused || !Game.board) return;
 
@@ -1709,6 +1716,9 @@ function bindEvents() {
 
     // 자동 메모
     document.getElementById('auto-memo-btn').addEventListener('click', autoFillMemos);
+
+    // 메모 전체 삭제
+    document.getElementById('clear-memo-btn').addEventListener('click', clearAllMemos);
 
     // 기록 저장
     document.getElementById('save-score-btn').addEventListener('click', () => {

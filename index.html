@@ -78,17 +78,20 @@
 
     <!-- 상단 헤더 -->
     <header class="header">
-        <div class="logo">
-            <span class="heaven-title-sm">Sudoku Heaven</span>
-            <span id="game-diff-badge" class="game-diff-badge"></span>
-            <span id="daily-badge" class="daily-badge hidden">📅 Daily</span>
-        </div>
-        <div class="header-center">
+        <!-- 좌측: 보조 버튼들 -->
+        <div class="header-left">
             <button id="undo-btn" class="icon-btn" title="되돌리기 (Ctrl+Z)">↩</button>
             <button id="redo-btn" class="icon-btn" title="다시하기 (Ctrl+Y)">↪</button>
             <button id="theme-toggle-game-btn" class="icon-btn" title="다크 모드">🌙</button>
         </div>
+        <!-- 중앙: 타이틀 (데스크탑만 표시) -->
+        <div class="logo">
+            <span class="heaven-title-sm">Sudoku Heaven</span>
+        </div>
+        <!-- 우측: 레벨 + 오답 + 타이머 (항상 잘 보여야 함) -->
         <div class="header-right">
+            <span id="game-diff-badge" class="game-diff-badge"></span>
+            <span id="daily-badge" class="daily-badge hidden">📅 Daily</span>
             <div class="error-counter" id="error-counter">❌ <span id="error-count">0</span></div>
             <div class="timer-wrap">
                 <span id="timer-display">00:00</span>
@@ -115,17 +118,16 @@
         <!-- 오른쪽 패널 -->
         <div class="side-panel">
 
-            <!-- 메모 & 오답표시 토글 -->
+            <!-- 메모 · 오답 · 자동메모 토글 (한 줄) -->
             <div class="panel-toggles">
-                <button id="memo-btn" class="toggle-pill" title="메모 모드 (M)">
-                    ✏️ 메모
-                </button>
+                <button id="memo-btn" class="toggle-pill" title="메모 모드 (M)">✏️ 메모</button>
                 <label class="toggle-pill-label">
                     <input type="checkbox" id="error-check" checked>
-                    <span>🔴 오답 표시</span>
+                    <span>🔴 오답</span>
                 </label>
+                <button id="auto-memo-btn" class="toggle-pill" title="빈 칸에 가능한 숫자 자동 채우기">✨ 자동</button>
+                <button id="clear-memo-btn" class="toggle-pill-icon" title="메모 전체 삭제">🗑️</button>
             </div>
-            <button id="auto-memo-btn" class="btn btn-secondary btn-sm auto-memo-btn" title="빈 칸에 가능한 숫자 자동 채우기">✨ 자동 메모</button>
 
             <!-- 숫자 패드 -->
             <div class="number-pad">

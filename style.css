@@ -58,7 +58,7 @@
     --cell-hint-bg:      #14291D;
     --cell-error-text:   #F87171;
     --cell-error-bg:     #3A1818;
-    --memo-color:        #A0BDD0;
+    --memo-color:        #C4D8E8;
     --memo-highlight:   #60A5FA;
 
     --shadow:    0 2px 8px rgba(0,0,0,0.35);
@@ -347,7 +347,7 @@ body {
 }
 /* 시작화면 배경에 맞는 헤더 그라디언트 - 밝은 배경에 잘 보이게 */
 
-.header-center {
+.header-left {
     display: flex;
     gap: 4px;
 }
@@ -355,7 +355,7 @@ body {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .error-counter {
@@ -617,7 +617,7 @@ body {
     min-width: 180px;
 }
 
-.panel-toggles { display: flex; flex-direction: column; gap: 8px; }
+.panel-toggles { display: flex; flex-direction: row; gap: 6px; align-items: stretch; }
 
 .toggle-pill {
     display: flex;
@@ -656,6 +656,29 @@ body {
 }
 .toggle-pill-label:hover { border-color: var(--primary); }
 .toggle-pill-label input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+/* 패널 토글 내 flex 배분: 메모·오답·자동 각각 균등, 🗑️은 고정 */
+.panel-toggles .toggle-pill       { flex: 1; padding: 7px 4px; font-size: 0.82rem; white-space: nowrap; }
+.panel-toggles .toggle-pill-label { flex: 1; padding: 7px 4px; font-size: 0.82rem; white-space: nowrap; justify-content: center; }
+
+/* 메모 전체 삭제 아이콘 버튼 */
+.toggle-pill-icon {
+    flex-shrink: 0;
+    width: 36px;
+    padding: 7px 0;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    color: var(--text-muted);
+}
+.toggle-pill-icon:hover { border-color: #DC2626; color: #DC2626; background: #FFF5F5; }
+[data-theme="dark"] .toggle-pill-icon:hover { background: #3A1818; }
 
 /* 숫자 패드 */
 .number-pad {
@@ -1358,11 +1381,12 @@ body {
         padding-right:  max(8px, env(safe-area-inset-right));
     }
 
-    /* ── 헤더: 더 컴팩트하게 */
-    .header { padding: 8px 12px; margin-bottom: 8px; }
-    .heaven-title-sm { font-size: 1.2rem; }
-    #timer-display { font-size: 1.1rem; min-width: 48px; letter-spacing: 1px; }
+    /* ── 헤더: 더 컴팩트하게, 타이틀 숨김 */
+    .header { padding: 8px 10px; margin-bottom: 8px; }
+    .logo { display: none; }           /* 모바일: "Sudoku Heaven" 텍스트 숨김 */
+    #timer-display { font-size: 1.15rem; min-width: 48px; letter-spacing: 1px; }
     .timer-wrap { padding: 5px 10px; }
+    .error-counter { margin-right: 0; }
 
     /* ── 게임 액션 바 */
     .game-actions { padding: 6px 10px; margin-bottom: 8px; }
@@ -1396,10 +1420,11 @@ body {
         min-width: unset;
     }
 
-    /* 메모·오답 토글: 가로 한 줄, 작게 */
-    .panel-toggles { flex-direction: row; gap: 5px; }
-    .toggle-pill       { flex: 1; padding: 5px 8px; font-size: 0.78rem; }
-    .toggle-pill-label { flex: 1; padding: 5px 8px; font-size: 0.78rem; }
+    /* 메모·오답·자동·삭제 토글: 가로 한 줄, 작게 */
+    .panel-toggles { gap: 4px; }
+    .panel-toggles .toggle-pill       { padding: 5px 4px; font-size: 0.75rem; }
+    .panel-toggles .toggle-pill-label { padding: 5px 4px; font-size: 0.75rem; }
+    .toggle-pill-icon { width: 32px; font-size: 0.9rem; }
 
     /* 숫자 패드: 터치하기 좋은 크기 유지 */
     .number-pad { gap: 5px; }

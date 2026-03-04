@@ -83,7 +83,7 @@ const T = {
         // 데일리 챌린지
         dailyBtnText: '📅 오늘의 챌린지',
         tabDaily:     '📅 오늘의 챌린지',
-        autoMemoBtn:  '✨ 자동 메모',
+        autoMemoBtn:  '✨ 자동',
         // 난이도명
         diffMap: { '입문':'입문', '쉬움':'쉬움', '보통':'보통', '어려움':'어려움', '전문가':'전문가' },
     },
@@ -155,7 +155,7 @@ const T = {
         // Daily challenge
         dailyBtnText: '📅 Daily Challenge',
         tabDaily:     '📅 Daily Challenge',
-        autoMemoBtn:  '✨ Auto Notes',
+        autoMemoBtn:  '✨ Auto',
         diffMap: { '입문':'Beginner', '쉬움':'Easy', '보통':'Medium', '어려움':'Hard', '전문가':'Expert' },
     },
 };
