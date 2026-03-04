@@ -35,6 +35,34 @@
     --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
 }
 
+/* ===================== 다크 모드 ===================== */
+[data-theme="dark"] {
+    --primary:        #60A5FA;
+    --primary-dark:   #3B82F6;
+    --primary-light:  #1E3A5F;
+    --bg:             #0F172A;
+    --surface:        #1E293B;
+    --border:         #334155;
+    --border-strong:  #CBD5E1;
+    --text:           #F1F5F9;
+    --text-muted:     #94A3B8;
+
+    --cell-selected:     #1E3A5F;
+    --cell-highlight:    #162840;
+    --cell-same-num:     #162032;
+    --cell-numpad-match: #1D4ED8;
+    --cell-given-text:   #F1F5F9;
+    --cell-user-text:    #60A5FA;
+    --cell-hint-text:    #4ADE80;
+    --cell-hint-bg:      #14532D;
+    --cell-error-text:   #F87171;
+    --cell-error-bg:     #7F1D1D;
+    --memo-color:        #64748B;
+
+    --shadow:    0 2px 8px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
                  'Noto Sans KR', sans-serif;
@@ -188,6 +216,61 @@ body {
 }
 .btn-link:hover { color: var(--primary); }
 
+/* 데일리 챌린지 버튼 (시작 화면) */
+.daily-challenge-btn {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #7C3AED;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+    color: #6D28D9;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.daily-challenge-btn:hover {
+    background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124,58,237,0.25);
+}
+
+.daily-date-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+/* 헤더 데일리 배지 */
+.daily-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: #F5F3FF;
+    color: #7C3AED;
+    border: 1.5px solid #C4B5FD;
+    white-space: nowrap;
+}
+
+/* 자동 메모 버튼 */
+.auto-memo-btn {
+    background: #FFFBEB !important;
+    border-color: #FDE68A !important;
+    color: #92400E !important;
+}
+.auto-memo-btn:hover {
+    background: #FEF3C7 !important;
+    border-color: #F59E0B !important;
+    color: #78350F !important;
+}
+
 /* 언어 토글 버튼 */
 .lang-toggle {
     display: flex;
@@ -211,6 +294,20 @@ body {
     border-color: var(--primary);
     color: white;
 }
+
+/* 다크 모드 토글 버튼 */
+.theme-toggle-btn {
+    padding: 4px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    transition: border-color 0.15s;
+}
+.theme-toggle-btn:hover { border-color: var(--primary); }
 
 /* ===================== 레이아웃 ===================== */
 #app {
@@ -257,6 +354,15 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.error-counter {
+    font-size: 0.85rem;
+    color: #e53e3e;
+    margin-right: 0.6rem;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
 }
 
 .timer-wrap {
@@ -581,6 +687,11 @@ body {
 }
 .num-btn:active { transform: scale(0.95); }
 
+/* 완성된 숫자 (9개 모두 올바르게 입력됨) - 클릭 허용(선택/해제), 입력만 차단 */
+.num-btn.num-done {
+    opacity: 0.25;
+}
+
 /* 키패드 활성 상태 (selectedNum과 일치) */
 .num-btn.num-active {
     background: var(--primary);
@@ -592,6 +703,52 @@ body {
 
 .erase-btn { font-size: 1rem; color: #DC2626; border-color: #FECACA; background: #FFF5F5; }
 .erase-btn:hover { background: #FEE2E2; border-color: #DC2626; color: #DC2626; }
+
+/* ── 메모 모드 활성화 시 스타일 ── */
+/* 메모 버튼 보라색으로 강조 */
+#memo-btn.active {
+    background: #F5F3FF;
+    border-color: #8B5CF6;
+    color: #7C3AED;
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+}
+
+/* 숫자 패드 - 메모 모드일 때 보라색 테마 */
+.number-pad.memo-mode .num-btn {
+    border-color: #C4B5FD;
+    color: #7C3AED;
+    background: #F5F3FF;
+}
+.number-pad.memo-mode .num-btn:hover {
+    background: #EDE9FE;
+    border-color: #8B5CF6;
+    color: #6D28D9;
+    transform: scale(1.05);
+}
+.number-pad.memo-mode .num-btn.num-active {
+    background: #7C3AED;
+    border-color: #6D28D9;
+    color: white;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.4);
+}
+.number-pad.memo-mode .erase-btn {
+    border-color: #FECACA;
+    color: #DC2626;
+    background: #FFF5F5;
+}
+
+/* 선택된 셀 - 메모 모드일 때 보라색 테두리 */
+.sudoku-board.memo-mode .sudoku-cell.selected {
+    background: #EDE9FE;
+    box-shadow: inset 0 0 0 2.5px #8B5CF6;
+}
+
+/* 메모 숫자 하이라이트 (selectedNum 일치 시) */
+.memo-num.memo-highlighted {
+    color: #2563EB;
+    font-weight: 900;
+    font-size: 0.68rem;
+}
 
 /* 키보드 도움말 */
 .keyboard-help {
@@ -804,6 +961,18 @@ body {
     color: white;
 }
 
+/* 데일리 탭 특별 스타일 */
+.hof-tab-daily {
+    border-color: #C4B5FD;
+    color: #7C3AED;
+}
+.hof-tab-daily:hover { border-color: #7C3AED; color: #6D28D9; }
+.hof-tab-daily.active {
+    background: #7C3AED;
+    border-color: #6D28D9;
+    color: white;
+}
+
 .hof-card-body {
     overflow-y: auto;
     flex: 1;
@@ -829,6 +998,7 @@ body {
 
 .hof-card-footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     padding: 12px 28px 20px;
@@ -1003,7 +1173,62 @@ body {
 
 .save-section { width: 100%; }
 .save-label { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px; text-align: center; }
-.save-row { display: flex; gap: 8px; }
+.save-row { display: flex; gap: 8px; align-items: center; }
+.celeb-bottom-links { display: flex; justify-content: center; gap: 20px; margin-top: 8px; }
+.skip-save-link { cursor: pointer; }
+.share-link { cursor: pointer; }
+
+/* 공유 모달 */
+.share-modal-box {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 360px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: var(--shadow-md);
+}
+.share-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.share-preview { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: block; }
+.share-modal-hint { font-size: 0.78rem; color: var(--text-muted); text-align: center; }
+.share-modal-actions { display: flex; gap: 8px; }
+.share-modal-actions .btn { flex: 1; }
+
+/* 국기 선택기 */
+.flag-selector-wrap { position: relative; flex-shrink: 0; }
+.flag-btn {
+    width: 38px; height: 38px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); cursor: pointer; font-size: 1.3rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s;
+}
+.flag-btn:hover { border-color: var(--primary); }
+.flag-picker {
+    position: fixed;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-md);
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 2px; padding: 6px; width: 220px; max-height: 260px;
+    overflow-y: auto; z-index: 9999;
+}
+.flag-picker.hidden { display: none; }
+.flag-item {
+    background: none; border: none; cursor: pointer; padding: 6px 8px;
+    border-radius: var(--radius-sm); text-align: left;
+    font-size: 0.82rem; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; transition: background 0.1s;
+}
+.flag-item:hover { background: var(--primary-light); }
+.lb-flag { margin-right: 4px; }
 .name-input {
     flex: 1;
     padding: 10px 14px;

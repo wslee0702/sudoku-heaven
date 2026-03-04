@@ -26,7 +26,13 @@ const Game = {
     memoMode:     false,
     showErrors:   true,
     completed:    false,
+    saving:       false,
     hintsLeft:    5,
+
+    // 데일리 챌린지
+    isDaily:      false,
+    dailyDate:    null,
+    puzzleSeed:   null,
 
     // 이력 관리 (Undo/Redo)
     history:      [],     // 스냅샷 스택 (최대 50)
@@ -35,6 +41,8 @@ const Game = {
     // 완성된 줄/박스 추적 (중복 플래시 방지)
     completedLines: new Set(), // 'row-0', 'col-3', 'box-1-2' 형태
 
+    errorCount: 0,  // 오답 입력 횟수
+
     timerSeconds:   0,
     timerInterval:  null,
     paused:         false,
@@ -42,10 +50,204 @@ const Game = {
 
 // ===================== 유틸 =====================
 
+// ISO 2자리 코드 → 국기 이모지
+function codeToFlag(code) {
+    if (!code || code.length !== 2 || code === 'XX') return '🏳';
+    return [...code.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
+}
+
+// 자주 쓰는 국가 목록
+const COUNTRY_LIST = [
+    ['KR','한국'],['US','USA'],['JP','日本'],['GB','UK'],
+    ['DE','Germany'],['FR','France'],['CN','中国'],['CA','Canada'],
+    ['AU','Australia'],['NL','Netherlands'],['SE','Sweden'],['NO','Norway'],
+    ['FI','Finland'],['DK','Denmark'],['IN','India'],['BR','Brasil'],
+    ['RU','Russia'],['IT','Italia'],['ES','España'],['PL','Poland'],
+    ['PT','Portugal'],['HK','香港'],['TW','台灣'],['SG','Singapore'],
+    ['TH','Thailand'],['VN','Việt Nam'],['MX','México'],['AR','Argentina'],
+];
+
+const CELEB_MESSAGES = {
+    ko: ['완벽해요!', '정말 대단해요!', '멋진 실력이에요!', '훌륭합니다!', '놀라워요!',
+         '수도쿠 고수!', '천재인가요?!', '완전 멋져요!', '브라보!', '실력자네요!'],
+    en: ['Brilliant!', 'Amazing job!', 'Superb!', 'Outstanding!', 'Incredible!',
+         'Sudoku Master!', 'Are you a genius?!', 'Fantastic!', 'Bravo!', 'Well done!'],
+};
+const CELEB_EMOJIS = ['🎉', '🎊', '✨', '🌟', '🎯', '🎆', '🏅', '🌈', '⭐', '🔥'];
+
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+}
+
+// ===================== 다크 모드 =====================
+
+function applyTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    const icon = dark ? '☀️' : '🌙';
+    document.querySelectorAll('#theme-toggle-btn, #theme-toggle-game-btn').forEach(btn => {
+        if (btn) btn.textContent = icon;
+    });
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    localStorage.setItem('sudoku_theme', isDark ? 'light' : 'dark');
+    applyTheme(!isDark);
+}
+
+// ===================== 결과 공유 =====================
+
+function buildShareCanvas(rank) {
+    const isDark    = document.documentElement.getAttribute('data-theme') === 'dark';
+    const hintsUsed = 5 - Game.hintsLeft;
+    const diffInfo  = SudokuEngine.getDifficultyInfo(Game.difficulty);
+
+    // 축하 메시지 & 이모지 랜덤 선택
+    const msgs  = CELEB_MESSAGES[currentLang] || CELEB_MESSAGES.ko;
+    const msg   = msgs[Math.floor(Math.random() * msgs.length)];
+    const emoji = CELEB_EMOJIS[Math.floor(Math.random() * CELEB_EMOJIS.length)];
+
+    // 완료 날짜/시간
+    const now     = new Date();
+    const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' });
+    const timeStr = now.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+
+    // 순위 레이블
+    const rankLabel = rank != null
+        ? (currentLang === 'en' ? `Season Rank #${rank}` : `시즌 ${rank}위`)
+        : (currentLang === 'en' ? 'Fetching rank...' : '순위 불러오는 중');
+
+    const W = 480, H = 310, scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    const c = isDark
+        ? { bg:'#1E293B', bar:'#3B82F6', title:'#60A5FA', text:'#F1F5F9', muted:'#94A3B8', border:'#334155' }
+        : { bg:'#FFFFFF', bar:'#2563EB', title:'#2563EB', text:'#1E293B', muted:'#64748B', border:'#E2E8F0' };
+
+    const f = (sz, w = 'normal') =>
+        `${w} ${sz}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+
+    // 배경
+    ctx.fillStyle = c.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 상단 바
+    ctx.fillStyle = c.bar;
+    ctx.fillRect(0, 0, W, 6);
+
+    // 로고
+    ctx.textAlign = 'left';
+    ctx.fillStyle = c.title;
+    ctx.font = f(20, 'bold');
+    ctx.fillText('Sudoku Heaven', 28, 37);
+
+    // 구분선
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(28, 50); ctx.lineTo(W - 28, 50); ctx.stroke();
+
+    // 축하 메시지
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.title;
+    ctx.font = f(20, 'bold');
+    ctx.fillText(`${emoji}  ${msg}`, W / 2, 80);
+
+    let y = 112;
+
+    // 데일리 뱃지
+    if (Game.isDaily && Game.dailyDate) {
+        ctx.fillStyle = c.muted;
+        ctx.font = f(13);
+        ctx.fillText(`📅 오늘의 챌린지  ·  ${Game.dailyDate}`, W / 2, y);
+        y += 24;
+    }
+
+    // 레벨
+    ctx.fillStyle = c.text;
+    ctx.font = f(16, 'bold');
+    ctx.fillText(`Lv.${Game.difficulty}  ${translateDiffName(diffInfo.name)}  ${diffInfo.stars}`, W / 2, y);
+    y += 44;
+
+    // 시간 (크게)
+    ctx.fillStyle = c.title;
+    ctx.font = f(38, 'bold');
+    ctx.fillText(`⏱ ${formatTime(Game.timerSeconds)}`, W / 2, y);
+    y += 36;
+
+    // 힌트
+    ctx.fillStyle = c.muted;
+    ctx.font = f(14);
+    ctx.fillText(`💡 힌트 ${hintsUsed}개`, W / 2, y);
+    y += 32;
+
+    // 순위 & 날짜시간
+    ctx.font = f(13);
+    const rankPart = rankLabel ? `🏆 ${rankLabel}   ` : '';
+    ctx.fillText(`${rankPart}📅 ${dateStr}  ${timeStr}`, W / 2, y);
+
+    // 하단 구분선
+    ctx.strokeStyle = c.border;
+    ctx.beginPath(); ctx.moveTo(28, H - 33); ctx.lineTo(W - 28, H - 33); ctx.stroke();
+
+    // URL
+    ctx.fillStyle = c.muted;
+    ctx.font = f(12);
+    ctx.fillText('sudoku-heaven.vercel.app', W / 2, H - 14);
+
+    return canvas;
+}
+
+function buildShareText(rank) {
+    const hintsUsed = 5 - Game.hintsLeft;
+    const diffInfo  = SudokuEngine.getDifficultyInfo(Game.difficulty);
+    const now       = new Date();
+    const dateStr   = now.toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' });
+    const timeStr   = now.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+    const rankStr   = rank != null ? `시즌 ${rank}위` : '-';
+
+    const lines = Game.isDaily
+        ? [`📅 Sudoku Heaven — 오늘의 챌린지 (${Game.dailyDate})`]
+        : ['🎮 Sudoku Heaven'];
+    lines.push(`Lv.${Game.difficulty} ${translateDiffName(diffInfo.name)} | ⏱ ${formatTime(Game.timerSeconds)} | 💡 힌트 ${hintsUsed}개`);
+    lines.push(`🏆 ${rankStr}  |  📅 ${dateStr} ${timeStr}`);
+    lines.push('sudoku-heaven.vercel.app');
+    return lines.join('\n');
+}
+
+async function fetchSeasonRank() {
+    const hintsUsed = 5 - Game.hintsLeft;
+    const score     = Game.timerSeconds + hintsUsed * 60;
+    const rawData   = await loadGlobalScores({ level: Game.difficulty, sinceIso: getCurrentMonthIso(), limit: 1000 });
+    if (!rawData) return null;
+    return rawData.filter(r => r.score < score).length + 1;
+}
+
+async function shareResult() {
+    // 모달 먼저 열고 로딩 표시
+    document.getElementById('share-preview').src = '';
+    document.getElementById('share-modal').classList.remove('hidden');
+
+    const rank   = await fetchSeasonRank();
+    const canvas = buildShareCanvas(rank);
+    document._shareCanvas = canvas;
+    document.getElementById('share-preview').src = canvas.toDataURL('image/png');
+}
+
+async function copyShareText() {
+    const rank = await fetchSeasonRank();
+    const text = buildShareText(rank);
+    try {
+        await navigator.clipboard.writeText(text);
+        showRankToast(currentLang === 'en' ? '📋 Copied!' : '📋 클립보드에 복사됐어요!');
+    } catch {
+        prompt(currentLang === 'en' ? 'Copy this result:' : '아래 결과를 복사하세요:', text);
+    }
 }
 
 // ===================== 이력 관리 (Undo/Redo) =====================
@@ -113,6 +315,8 @@ function createBoardDOM() {
     boardEl.innerHTML = '';
     cellEls.length = 0;
 
+    let lastTap = { r: -1, c: -1, t: 0 };
+
     for (let r = 0; r < 9; r++) {
         cellEls.push([]);
         for (let c = 0; c < 9; c++) {
@@ -120,7 +324,20 @@ function createBoardDOM() {
             cell.className = 'sudoku-cell';
             if (c === 2 || c === 5) cell.classList.add('thick-right');
             if (r === 2 || r === 5) cell.classList.add('thick-bottom');
-            cell.addEventListener('click', () => onCellClick(r, c));
+            cell.addEventListener('click', () => {
+                const now = Date.now();
+                const isDbl = lastTap.r === r && lastTap.c === c && (now - lastTap.t) < 350;
+                lastTap = { r, c, t: now };
+                // 더블클릭/더블탭 → 칸 지우기
+                if (isDbl && !Game.paused && !Game.completed
+                    && !Game.given[r]?.[c] && !Game.hinted[r]?.[c]) {
+                    Game.selected = { row: r, col: c };
+                    inputNumber(0);
+                    lastTap = { r: -1, c: -1, t: 0 }; // 연속 트리플클릭 방지
+                    return;
+                }
+                onCellClick(r, c);
+            });
             boardEl.appendChild(cell);
             cellEls[r].push(cell);
         }
@@ -188,7 +405,12 @@ function renderCell(r, c) {
         for (let n = 1; n <= 9; n++) {
             const span = document.createElement('span');
             span.className = 'memo-num';
-            span.textContent = Game.memos[r][c].has(n) ? n : '';
+            if (Game.memos[r][c].has(n)) {
+                span.textContent = n;
+                if (Game.selectedNum !== 0 && n === Game.selectedNum) {
+                    span.classList.add('memo-highlighted');
+                }
+            }
             grid.appendChild(span);
         }
         cell.appendChild(grid);
@@ -345,12 +567,124 @@ function showStartScreen() {
     document.getElementById('start-screen').classList.remove('hidden');
 }
 
+// ===================== 데일리 챌린지 =====================
+
+// 오늘 날짜 "YYYY-MM-DD" 형식
+function getDailyDate() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// 날짜 문자열 → 시드 정수 (안정적인 해시)
+function getDailySeed(dateStr) {
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+        hash = (hash * 31 + dateStr.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash) || 12345;
+}
+
+// 날짜 시드 기반 난이도 (Lv4~8, 1~3과 9~10 제외)
+function getDailyDifficulty() {
+    const seed = getDailySeed(getDailyDate());
+    const levels = [4, 5, 6, 7, 8];
+    return levels[Math.abs(seed) % levels.length];
+}
+
+// 오늘 데일리 완료 여부 확인
+function isDailyCompleted(dateStr) {
+    return !!localStorage.getItem(`sudoku_daily_${dateStr}`);
+}
+
+// 데일리 완료 표시
+function markDailyCompleted(dateStr, score) {
+    localStorage.setItem(`sudoku_daily_${dateStr}`, JSON.stringify({ completedAt: Date.now(), score }));
+}
+
+// 데일리 챌린지 시작
+function startDailyChallenge() {
+    const dateStr = getDailyDate();
+    const seed    = getDailySeed(dateStr);
+    const level   = getDailyDifficulty();
+
+    if (Game.timerInterval) clearInterval(Game.timerInterval);
+    hideRankToast();
+    hideStartScreen();
+    stopConfetti();
+
+    Game.difficulty   = level;
+    Game.completed    = false;
+    Game.saving       = false;
+    Game.selected     = null;
+    Game.memoMode     = false;
+    Game.hintsLeft    = 5;
+    Game.paused       = false;
+    Game.history      = [];
+    Game.future       = [];
+    Game.completedLines = new Set();
+    Game.selectedNum  = 0;
+    Game.isDaily      = true;
+    Game.dailyDate    = dateStr;
+    Game.puzzleSeed   = seed;
+
+    // 헤더 데일리 배지 표시
+    document.getElementById('daily-badge').classList.remove('hidden');
+
+    updateDifficultyDisplay(level);
+    updateMemoBtn();
+    updateHintBtn();
+    updateUndoRedoBtns();
+    updateNumpadUI();
+
+    showLoading(true);
+    setTimeout(() => {
+        const { puzzle, solution } = SudokuEngine.createPuzzleSeeded(level, seed);
+
+        Game.board        = puzzle.map(row => [...row]);
+        Game.solution     = solution;
+        Game.given        = puzzle.map(row => row.map(v => v !== 0));
+        Game.memos        = Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => new Set()));
+        Game.hinted       = Array.from({ length: 9 }, () => Array(9).fill(false));
+        Game.initialBoard = puzzle.map(row => [...row]);
+
+        renderBoard();
+        showLoading(false);
+        startTimer();
+    }, 50);
+}
+
+// ===================== 자동 메모 채우기 =====================
+
+function autoFillMemos() {
+    if (Game.completed || Game.paused || !Game.board) return;
+
+    saveToHistory();
+
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (Game.board[r][c] === 0 && !Game.given[r][c] && !Game.hinted[r][c]) {
+                Game.memos[r][c] = new Set();
+                for (let n = 1; n <= 9; n++) {
+                    if (SudokuEngine.isValidPlacement(Game.board, r, c, n)) {
+                        Game.memos[r][c].add(n);
+                    }
+                }
+            }
+        }
+    }
+
+    renderBoard();
+}
+
 // bannerState: null(숨김) | 'success'(성공) | 'error'(실패)
 async function showHofOverlay(bannerState = null) {
     const levelFilter = document.getElementById('hof-level-filter');
     if (levelFilter) levelFilter.value = Game.difficulty;
-    // 기본 탭: 시즌·전체레벨 (index 1 = 'all')
-    document.querySelectorAll('.hof-tab').forEach((b, i) => b.classList.toggle('active', i === 1));
+    // 기본 탭: 데일리 게임이면 daily 탭, 아니면 시즌·현재레벨 (index 0 = 'level')
+    const defaultTab = Game.isDaily ? 'daily' : 'level';
+    document.querySelectorAll('.hof-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.hoftab === defaultTab);
+    });
 
     // 저장 결과 배너 제어
     const banner = document.getElementById('hof-save-banner');
@@ -392,6 +726,7 @@ function newGame(levelOverride) {
 
     Game.difficulty = level;
     Game.completed  = false;
+    Game.saving     = false;
     Game.selected   = null;
     Game.memoMode   = false;
     Game.hintsLeft  = 5;
@@ -400,6 +735,14 @@ function newGame(levelOverride) {
     Game.future     = [];
     Game.completedLines = new Set();
     Game.selectedNum = 0;
+    Game.isDaily    = false;
+    Game.dailyDate  = null;
+    Game.puzzleSeed = null;
+    Game.errorCount = 0;
+
+    // 데일리 배지 숨김
+    document.getElementById('daily-badge').classList.add('hidden');
+    document.getElementById('error-count').textContent = '0';
 
     updateDifficultyDisplay(level);
 
@@ -438,6 +781,7 @@ function restartGame() {
     Game.hinted   = Array.from({ length: 9 }, () => Array(9).fill(false));
     Game.selected = null;
     Game.completed  = false;
+    Game.saving     = false;
     Game.hintsLeft  = 5;
     Game.memoMode   = false;
     Game.paused     = false;
@@ -445,6 +789,8 @@ function restartGame() {
     Game.future     = [];
     Game.completedLines = new Set();
     Game.selectedNum = 0;
+    Game.errorCount = 0;
+    document.getElementById('error-count').textContent = '0';
 
     updateMemoBtn();
     updateHintBtn();
@@ -464,6 +810,10 @@ function onCellClick(r, c) {
         if (Game.selectedNum !== 0 && !Game.given[r][c] && !Game.hinted[r][c]) {
             // 같은 숫자 → 지우기 / 다른 숫자 → 입력
             inputNumber(Game.board[r][c] === Game.selectedNum ? 0 : Game.selectedNum);
+        } else {
+            // 선택 해제
+            Game.selected = null;
+            renderBoard();
         }
         return;
     }
@@ -496,12 +846,22 @@ function inputNumber(num) {
 
     if (num === 0) {
         // 모드에 관계없이 숫자 + 메모 모두 지우기
+        const oldVal = Game.board[r][c];
         Game.board[r][c] = 0;
         Game.memos[r][c].clear();
+        // 지운 숫자의 완성 상태 취소 → numpad 버튼 다시 활성화
+        if (oldVal > 0) Game.completedLines.delete(`num-${oldVal}`);
     } else if (Game.memoMode) {
         if (Game.memos[r][c].has(num)) Game.memos[r][c].delete(num);
         else Game.memos[r][c].add(num);
     } else {
+        const oldVal = Game.board[r][c];
+        // 덮어쓰는 기존 숫자의 완성 상태 취소 → numpad 버튼 다시 활성화
+        if (oldVal > 0) Game.completedLines.delete(`num-${oldVal}`);
+        if (num !== Game.solution[r][c]) {
+            Game.errorCount++;
+            document.getElementById('error-count').textContent = Game.errorCount;
+        }
         Game.board[r][c] = num;
         Game.memos[r][c].clear();
         clearRelatedMemos(r, c, num);
@@ -511,6 +871,7 @@ function inputNumber(num) {
     }
 
     renderBoard();
+    updateNumpadUI();
 }
 
 // 같은 행/열/박스의 메모에서 해당 숫자 자동 삭제
@@ -552,6 +913,9 @@ function selectNumpadNumber(num) {
     updateNumpadUI();
     renderBoard();
 
+    // 완성된 숫자는 선택/해제만 허용 (입력 불가)
+    if (Game.completedLines.has(`num-${Game.selectedNum}`)) return;
+
     // 셀이 선택된 상태면 해당 번호 입력
     if (Game.selected && Game.selectedNum !== 0) {
         const { row: r, col: c } = Game.selected;
@@ -564,17 +928,15 @@ function selectNumpadNumber(num) {
 function updateNumpadUI() {
     document.querySelectorAll('.num-btn').forEach(btn => {
         const n = parseInt(btn.dataset.num);
-        if (n !== 0 && n === Game.selectedNum) {
-            btn.classList.add('num-active');
-        } else {
-            btn.classList.remove('num-active');
-        }
+        btn.classList.toggle('num-done',   n !== 0 && Game.completedLines.has(`num-${n}`));
+        btn.classList.toggle('num-active', n !== 0 && n === Game.selectedNum);
     });
 }
 
 // ===================== 완성 확인 =====================
 
 function checkComplete() {
+    if (Game.completed) return;
     for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
             if (Game.board[r][c] !== Game.solution[r][c]) return;
@@ -649,19 +1011,26 @@ function toggleMemoMode() {
 }
 
 function updateMemoBtn() {
-    const btn = document.getElementById('memo-btn');
+    const btn     = document.getElementById('memo-btn');
+    const numPad  = document.querySelector('.number-pad');
+    const board   = document.getElementById('sudoku-board');
     if (Game.memoMode) {
         btn.classList.add('active');
         btn.textContent = t('memoOn');
+        numPad.classList.add('memo-mode');
+        board.classList.add('memo-mode');
     } else {
         btn.classList.remove('active');
         btn.textContent = t('memoOff');
+        numPad.classList.remove('memo-mode');
+        board.classList.remove('memo-mode');
     }
 }
 
 // ===================== 타이머 =====================
 
 function startTimer() {
+    if (Game.timerInterval) clearInterval(Game.timerInterval);
     Game.timerSeconds = 0;
     Game.paused = false;
     updateTimerDisplay();
@@ -766,11 +1135,11 @@ function archiveSeason(season) {
     return newSeason;
 }
 
-function endSeason() {
+async function endSeason() {
     const season = getCurrentSeason();
     if (!confirm(t('confirmEndSeason', season.name))) return;
     archiveSeason(season);
-    renderHallOfFame();
+    await renderHallOfFame();
     alert(t('seasonEndedAlert', season.name));
 }
 
@@ -804,7 +1173,7 @@ function migrateOldRecords() {
 
     // 시즌 1 메타가 없을 때만 마이그레이션
     if (!localStorage.getItem(SEASON_META_KEY)) {
-        const season = initSeason(1);
+        initSeason(1);
         localStorage.setItem(getSeasonRecordsKey(1), JSON.stringify(oldRecords));
     }
     localStorage.removeItem(oldKey);
@@ -813,60 +1182,71 @@ function migrateOldRecords() {
 // ===================== 기록 저장 =====================
 
 async function saveRecord(name) {
+    if (Game.saving) return;
+    Game.saving = true;
+
     const hintsUsed = 5 - Game.hintsLeft;
     const score     = Game.timerSeconds + hintsUsed * 60;
     const diffInfo  = SudokuEngine.getDifficultyInfo(Game.difficulty);
 
+    const trimmedName = name.trim();
+    if (trimmedName) localStorage.setItem('sudoku_player_name', trimmedName);
+
     const record = {
-        name:        escapeHtml(name.trim() || (currentLang === 'en' ? 'Anonymous' : '이름없음')),
+        name:        escapeHtml(trimmedName || (currentLang === 'en' ? 'Anonymous' : '이름없음')),
         difficulty:  Game.difficulty,
         diffName:    diffInfo.name,
         tier:        diffInfo.tier,
         timeSeconds: Game.timerSeconds,
         hintsUsed,
         score,
-        date:    new Date().toLocaleDateString('ko-KR'),
-        savedAt: Date.now(),
+        date:       new Date().toLocaleDateString('ko-KR'),
+        savedAt:    Date.now(),
+        dailyDate:   Game.isDaily ? Game.dailyDate : null,
+        puzzleSeed:  Game.puzzleSeed || null,
+        countryCode: localStorage.getItem('sudoku_country') || 'XX',
     };
 
     // 저장 버튼 비활성화
     const saveBtn = document.getElementById('save-score-btn');
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '...'; }
 
-    // localStorage 백업 저장
-    const records = getCurrentSeasonRecords();
-    records.push(record);
-    records.sort((a, b) => a.score - b.score);
-    saveCurrentSeasonRecords(records);
+    try {
+        // localStorage 백업 저장
+        const records = getCurrentSeasonRecords();
+        records.push(record);
+        records.sort((a, b) => a.score - b.score);
+        saveCurrentSeasonRecords(records);
 
-    // Supabase 저장 (await → 삽입된 id 수신)
-    const onlineData = await saveScoreOnline(record);
-    const bannerState = onlineData ? 'success' : 'error';
+        // Supabase 저장 (await → 삽입된 id 수신)
+        const onlineData = await saveScoreOnline(record);
+        const bannerState = onlineData ? 'success' : 'error';
 
-    if (onlineData) {
-        // 온라인 저장 성공 → supabaseId로 현재 기록 추적
-        lastSavedRecord = { supabaseId: onlineData.id };
-    } else {
-        // 온라인 저장 실패 → savedAt으로 로컬 기록 추적 (폴백 표시용)
-        lastSavedRecord = { savedAt: record.savedAt };
+        if (onlineData) {
+            lastSavedRecord = { supabaseId: onlineData.id };
+        } else {
+            lastSavedRecord = { savedAt: record.savedAt };
+        }
+
+        // 순위 토스트 (로컬 기록 기준 즉시 피드백)
+        const levelRecords = records.filter(r => r.difficulty === record.difficulty);
+        const rank = levelRecords.findIndex(r => r.savedAt === record.savedAt) + 1;
+        if (rank > 0 && rank <= 10) {
+            const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆';
+            showRankToast(t('rankToast', emoji, record.difficulty, rank));
+        }
+
+        stopConfetti();
+
+        if (Game.isDaily && Game.dailyDate) markDailyCompleted(Game.dailyDate, score);
+
+        document.getElementById('celebration-overlay').classList.add('hidden');
+        showHofOverlay(bannerState);
+    } finally {
+        // 예외 발생 시에도 저장 플래그·버튼 반드시 복원
+        Game.saving = false;
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('saveBtn'); }
     }
-
-    // 저장 버튼 복원
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('saveBtn'); }
-
-    // 순위 토스트 (로컬 기록 기준 즉시 피드백)
-    const levelRecords = records.filter(r => r.difficulty === record.difficulty);
-    const rank = levelRecords.findIndex(r => r.savedAt === record.savedAt) + 1;
-    if (rank > 0 && rank <= 10) {
-        const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏆';
-        showRankToast(t('rankToast', emoji, record.difficulty, rank));
-    }
-
-    stopConfetti();
-
-    // 축하 화면 닫고 명예의 전당 오픈 (저장 결과 배너 포함)
-    document.getElementById('celebration-overlay').classList.add('hidden');
-    showHofOverlay(bannerState);
 }
 
 function showRankToast(msg) {
@@ -925,7 +1305,8 @@ function showCelebration() {
     document.querySelector('.celeb-main-info').style.display = '';
     document.querySelector('.save-section').style.display = '';
 
-    document.getElementById('player-name').value = '';
+    document.getElementById('player-name').value = localStorage.getItem('sudoku_player_name') || '';
+    document.getElementById('flag-picker').classList.add('hidden');
     document.getElementById('celebration-overlay').classList.remove('hidden');
     launchConfetti();
 }
@@ -949,6 +1330,7 @@ async function renderHallOfFame() {
         if (tab === 'all')        btn.textContent = `${seasonLabel} · ${t('tabSeasonAll')}`;
         if (tab === 'alltime')    btn.textContent = `${t('tabAlltime')} · Lv.${level}`;
         if (tab === 'alltimeall') btn.textContent = `${t('tabAlltime')} · ${t('tabSeasonAll')}`;
+        if (tab === 'daily')      btn.textContent = t('tabDaily');
     });
 
     const activeTab = document.querySelector('.hof-tab.active');
@@ -956,12 +1338,21 @@ async function renderHallOfFame() {
 }
 
 async function renderHofTab(tab, level) {
-    const showLevel  = tab === 'all' || tab === 'alltimeall';
-    const showSeason = tab === 'alltime' || tab === 'alltimeall';
-
     // 로딩 표시
     document.getElementById('hof-records').innerHTML =
         `<div class="lb-empty lb-loading">${t('hofLoading')}</div>`;
+
+    // 데일리 탭 별도 처리
+    if (tab === 'daily') {
+        const dateStr = getDailyDate();
+        const rawData = await loadGlobalScores({ dailyDate: dateStr, limit: 1000 });
+        const records = rawData ? rawData.map(mapSupabaseRecord) : [];
+        renderHofRecords(records, true, false);
+        return;
+    }
+
+    const showLevel  = tab === 'all' || tab === 'alltimeall';
+    const showSeason = tab === 'alltime' || tab === 'alltimeall';
 
     // "시즌" 탭 = 이번 달 / "역대" 탭 = 전체
     const sinceIso   = (tab === 'level' || tab === 'all') ? getCurrentMonthIso() : null;
@@ -1027,6 +1418,7 @@ function mapSupabaseRecord(row) {
         score:       row.score,
         date:        row.created_at ? new Date(row.created_at).toLocaleDateString('ko-KR') : '-',
         supabaseId:  row.id,
+        countryCode: row.country_code || 'XX',
     };
 }
 
@@ -1063,7 +1455,7 @@ function renderHofRecords(records, showLevel = false, showSeason = false) {
         return `
             <div class="lb-entry-row${isCurrent ? ' current-record' : ''}">
                 <span class="lb-rank ${rankClass}">${rankIcon}</span>
-                <span class="lb-name">${r.name}${levelBadge}${seasonBadge}</span>
+                <span class="lb-name"><span class="lb-flag">${codeToFlag(r.countryCode)}</span>${r.name}${levelBadge}${seasonBadge}</span>
                 <span>${translateDiffName(r.diffName || '')} Lv.${r.difficulty}</span>
                 <span class="lb-time">${formatTime(r.timeSeconds)}</span>
                 <span>${r.hintsUsed}${t('unitHints')}</span>
@@ -1179,6 +1571,12 @@ function applyTranslations() {
     const errorLabel = document.querySelector('.toggle-pill-label span');
     if (errorLabel) errorLabel.textContent = t('errorCheck');
     updateHintBtn();
+    const autoMemoBtn = document.getElementById('auto-memo-btn');
+    if (autoMemoBtn) autoMemoBtn.textContent = t('autoMemoBtn');
+
+    // 시작 화면 데일리 버튼 텍스트
+    const dailyBtnText = document.querySelector('.daily-btn-text');
+    if (dailyBtnText) dailyBtnText.textContent = t('dailyBtnText');
 
     // 키보드 도움말
     const kbTitle = document.querySelector('.keyboard-help p');
@@ -1237,7 +1635,7 @@ function applyTranslations() {
 
     // HoF가 열려 있으면 재렌더링
     if (!document.getElementById('hof-overlay').classList.contains('hidden')) {
-        renderHallOfFame();
+        renderHallOfFame().catch(console.error);
     }
 }
 
@@ -1255,10 +1653,16 @@ function bindStartScreen() {
     // 명예의 전당 바로가기 (인자 없이 호출해야 배너가 숨겨짐)
     document.getElementById('start-hof-btn').addEventListener('click', () => showHofOverlay());
 
+    // 데일리 챌린지 버튼
+    document.getElementById('daily-btn').addEventListener('click', startDailyChallenge);
+
     // 언어 토글
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
     });
+
+    // 다크 모드 토글 (시작 화면)
+    document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
 }
 
 // ===================== 이벤트 바인딩 =====================
@@ -1300,12 +1704,68 @@ function bindEvents() {
     // 힌트
     document.getElementById('hint-btn').addEventListener('click', useHint);
 
+    // 자동 메모
+    document.getElementById('auto-memo-btn').addEventListener('click', autoFillMemos);
+
     // 기록 저장
     document.getElementById('save-score-btn').addEventListener('click', () => {
         saveRecord(document.getElementById('player-name').value);
     });
     document.getElementById('player-name').addEventListener('keydown', e => {
-        if (e.key === 'Enter') saveRecord(document.getElementById('player-name').value);
+        if (e.key === 'Enter') { e.preventDefault(); saveRecord(document.getElementById('player-name').value); }
+    });
+
+    // 결과 공유 버튼 (완성 화면)
+    document.getElementById('share-btn').addEventListener('click', shareResult);
+
+    // 공유 모달
+    document.getElementById('share-modal-close').addEventListener('click', () => {
+        document.getElementById('share-modal').classList.add('hidden');
+    });
+    document.getElementById('share-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('share-modal'))
+            document.getElementById('share-modal').classList.add('hidden');
+    });
+    document.getElementById('share-download-btn').addEventListener('click', () => {
+        const canvas = document._shareCanvas;
+        if (!canvas) return;
+        const a = document.createElement('a');
+        a.download = `sudoku-heaven-${Game.isDaily ? Game.dailyDate : `lv${Game.difficulty}`}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    });
+    document.getElementById('share-text-btn').addEventListener('click', () => {
+        copyShareText();
+        document.getElementById('share-modal').classList.add('hidden');
+    });
+
+    // 저장 안함 버튼
+    document.getElementById('skip-save-btn').addEventListener('click', () => {
+        stopConfetti();
+        document.getElementById('celebration-overlay').classList.add('hidden');
+        showStartScreen();
+    });
+
+    // 다크 모드 토글 (게임 헤더)
+    document.getElementById('theme-toggle-game-btn').addEventListener('click', toggleTheme);
+
+    // 국기 선택기
+    const flagBtn    = document.getElementById('flag-btn');
+    const flagPicker = document.getElementById('flag-picker');
+    flagBtn.addEventListener('click', () => {
+        if (flagPicker.classList.contains('hidden')) {
+            const rect = flagBtn.getBoundingClientRect();
+            flagPicker.style.top  = (rect.bottom + 6) + 'px';
+            flagPicker.style.left = rect.left + 'px';
+            flagPicker.classList.remove('hidden');
+        } else {
+            flagPicker.classList.add('hidden');
+        }
+    });
+    document.addEventListener('click', (e) => {
+        if (!flagPicker.contains(e.target) && e.target !== flagBtn) {
+            flagPicker.classList.add('hidden');
+        }
     });
 
     // 다시시작 버튼
@@ -1337,15 +1797,15 @@ function bindEvents() {
     });
 
     // 명예의 전당 레벨 필터
-    document.getElementById('hof-level-filter').addEventListener('change', () => renderHallOfFame());
+    document.getElementById('hof-level-filter').addEventListener('change', async () => { await renderHallOfFame(); });
 
     // 명예의 전당 관리자 버튼
     document.getElementById('hof-end-season-btn').addEventListener('click', endSeason);
-    document.getElementById('hof-clear-records-btn').addEventListener('click', () => {
+    document.getElementById('hof-clear-records-btn').addEventListener('click', async () => {
         if (confirm(t('confirmClearRecords'))) {
             const season = getCurrentSeason();
             localStorage.removeItem(getSeasonRecordsKey(season.id));
-            renderHallOfFame();
+            await renderHallOfFame();
         }
     });
 
@@ -1417,24 +1877,25 @@ function bindEvents() {
             return;
         }
 
-        // Enter → 키패드 순환 (Shift+Enter = 역방향)
-        if (key === 'Enter') {
+        // Enter → 키패드 순환 (Shift+Enter / ' = 역방향), 완성된 숫자 건너뜀
+        if (key === 'Enter' || key === "'") {
             e.preventDefault();
-            if (e.shiftKey) {
-                if (Game.selectedNum === 0) Game.selectedNum = 9;
-                else Game.selectedNum--;
-            } else {
-                if (Game.selectedNum === 9) Game.selectedNum = 0;
-                else Game.selectedNum++;
+            const reverse = e.shiftKey || key === "'";
+            let next = Game.selectedNum;
+            for (let i = 0; i < 10; i++) {
+                next = reverse ? (next === 0 ? 9 : next - 1) : (next === 9 ? 0 : next + 1);
+                if (next === 0 || !Game.completedLines.has(`num-${next}`)) break;
             }
+            Game.selectedNum = next;
             updateNumpadUI();
             renderBoard();
             return;
         }
 
-        // 숫자 1~9
+        // 숫자 1~9 (완성된 숫자는 선택만 막고 메모 모드에선 허용)
         if (key >= '1' && key <= '9') {
             const n = parseInt(key);
+            if (!Game.memoMode && Game.completedLines.has(`num-${n}`)) return;
             Game.selectedNum = n;
             updateNumpadUI();
             renderBoard();
@@ -1469,6 +1930,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     applyTranslations();       // 저장된 언어로 UI 초기화
     updateUndoRedoBtns();
+    applyTheme(localStorage.getItem('sudoku_theme') === 'dark'); // 저장된 테마 적용
+
+    // 데일리 날짜 레이블 업데이트 (날짜 + 레벨 표시)
+    const dailyDateLabel = document.getElementById('daily-date-label');
+    if (dailyDateLabel) {
+        const dailyLevel = getDailyDifficulty();
+        const dailyInfo  = SudokuEngine.getDifficultyInfo(dailyLevel);
+        dailyDateLabel.textContent = `${getDailyDate()} · Lv.${dailyLevel} ${dailyInfo.stars}`;
+    }
+
+    // 국기 자동 감지 + 피커 빌드
+    const flagBtn    = document.getElementById('flag-btn');
+    const flagPicker = document.getElementById('flag-picker');
+    flagPicker.innerHTML = COUNTRY_LIST.map(([code, label]) =>
+        `<button class="flag-item" data-code="${code}">${codeToFlag(code)} ${label}</button>`
+    ).join('');
+    flagPicker.querySelectorAll('.flag-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const code = btn.dataset.code;
+            localStorage.setItem('sudoku_country', code);
+            flagBtn.textContent = codeToFlag(code);
+            flagPicker.classList.add('hidden');
+        });
+    });
+    detectCountry().then(code => {
+        flagBtn.textContent = codeToFlag(code);
+    });
 
     // 시작 화면 표시 (게임은 시작 화면에서 시작)
     showStartScreen();

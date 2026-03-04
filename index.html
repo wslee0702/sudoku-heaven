@@ -14,6 +14,7 @@
         <div class="lang-toggle">
             <button class="lang-btn active" data-lang="ko">한국어</button>
             <button class="lang-btn" data-lang="en">EN</button>
+            <button id="theme-toggle-btn" class="theme-toggle-btn" title="다크 모드">🌙</button>
         </div>
         <div class="start-logo">
             <span class="heaven-title">Sudoku Heaven</span>
@@ -63,6 +64,11 @@
             </button>
         </div>
 
+        <button id="daily-btn" class="daily-challenge-btn">
+            <span class="daily-btn-text">📅 오늘의 챌린지</span>
+            <span id="daily-date-label" class="daily-date-label"></span>
+        </button>
+
         <button id="start-hof-btn" class="btn-link">🏆 명예의 전당 보기</button>
     </div>
 </div>
@@ -75,12 +81,15 @@
         <div class="logo">
             <span class="heaven-title-sm">Sudoku Heaven</span>
             <span id="game-diff-badge" class="game-diff-badge"></span>
+            <span id="daily-badge" class="daily-badge hidden">📅 Daily</span>
         </div>
         <div class="header-center">
             <button id="undo-btn" class="icon-btn" title="되돌리기 (Ctrl+Z)">↩</button>
             <button id="redo-btn" class="icon-btn" title="다시하기 (Ctrl+Y)">↪</button>
+            <button id="theme-toggle-game-btn" class="icon-btn" title="다크 모드">🌙</button>
         </div>
         <div class="header-right">
+            <div class="error-counter" id="error-counter">❌ <span id="error-count">0</span></div>
             <div class="timer-wrap">
                 <span id="timer-display">00:00</span>
                 <button id="pause-btn" class="icon-btn" title="일시정지 (P)">⏸</button>
@@ -116,6 +125,7 @@
                     <span>🔴 오답 표시</span>
                 </label>
             </div>
+            <button id="auto-memo-btn" class="btn btn-secondary btn-sm auto-memo-btn" title="빈 칸에 가능한 숫자 자동 채우기">✨ 자동 메모</button>
 
             <!-- 숫자 패드 -->
             <div class="number-pad">
@@ -215,9 +225,17 @@
         <div class="save-section">
             <p class="save-label">닉네임을 입력하고 기록을 저장하세요!</p>
             <div class="save-row">
+                <div class="flag-selector-wrap">
+                    <button id="flag-btn" class="flag-btn" title="국가 선택">🏳</button>
+                    <div id="flag-picker" class="flag-picker hidden"></div>
+                </div>
                 <input type="text" id="player-name" class="name-input"
                     placeholder="닉네임 (최대 12자)" maxlength="12">
                 <button id="save-score-btn" class="btn btn-primary">저장</button>
+            </div>
+            <div class="celeb-bottom-links">
+                <button id="share-btn" class="btn-link share-link">📋 결과 공유</button>
+                <button id="skip-save-btn" class="btn-link skip-save-link">저장 안함</button>
             </div>
         </div>
 
@@ -255,10 +273,11 @@
             </div>
         </div>
         <div class="hof-card-tabs">
-            <button class="hof-tab" data-hoftab="level">시즌·현재레벨</button>
-            <button class="hof-tab active" data-hoftab="all">시즌·전체레벨</button>
+            <button class="hof-tab active" data-hoftab="level">시즌·현재레벨</button>
+            <button class="hof-tab" data-hoftab="all">시즌·전체레벨</button>
             <button class="hof-tab" data-hoftab="alltime">역대·현재레벨</button>
             <button class="hof-tab" data-hoftab="alltimeall">역대·전체레벨</button>
+            <button class="hof-tab hof-tab-daily" data-hoftab="daily">📅 오늘의 챌린지</button>
         </div>
         <div class="hof-card-body">
             <div id="hof-records"></div>
@@ -266,6 +285,22 @@
         <div class="hof-card-footer">
             <button id="hof-same-level-btn" class="btn btn-secondary btn-sm">↺ 같은 난이도 새 게임</button>
             <button id="hof-home-btn" class="btn btn-secondary btn-sm">🏠 홈</button>
+        </div>
+    </div>
+</div>
+
+<!-- 결과 공유 모달 -->
+<div id="share-modal" class="overlay hidden">
+    <div class="share-modal-box">
+        <div class="share-modal-header">
+            <span>결과 공유</span>
+            <button id="share-modal-close" class="icon-btn">✕</button>
+        </div>
+        <img id="share-preview" class="share-preview" alt="결과 이미지">
+        <p class="share-modal-hint">📱 모바일: 이미지 길게 눌러 저장</p>
+        <div class="share-modal-actions">
+            <button id="share-download-btn" class="btn btn-primary btn-sm">⬇ 이미지 저장</button>
+            <button id="share-text-btn" class="btn btn-secondary btn-sm">📋 텍스트 복사</button>
         </div>
     </div>
 </div>

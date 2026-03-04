@@ -2,11 +2,23 @@
 
 const SudokuEngine = (() => {
 
-    // 배열을 무작위로 섞는 함수
-    function shuffle(arr) {
+    // 시드 기반 난수 생성기 (Mulberry32 PRNG) - 같은 seed → 항상 같은 퍼즐
+    function mulberry32(seed) {
+        let s = seed >>> 0;
+        return function() {
+            s = s + 0x6D2B79F5 | 0;
+            let t = Math.imul(s ^ s >>> 15, 1 | s);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    // 배열을 무작위로 섞는 함수 (rand 함수 주입 가능)
+    function shuffle(arr, rand) {
+        const r = rand || Math.random;
         const a = [...arr];
         for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(r() * (i + 1));
             [a[i], a[j]] = [a[j], a[i]];
         }
         return a;
@@ -81,25 +93,25 @@ const SudokuEngine = (() => {
     }
 
     // 보드를 무작위로 채우기 (완성된 수도쿠 생성)
-    function fillBoardRandom(board) {
+    function fillBoardRandom(board, rand) {
         const cell = findBestCell(board);
         if (!cell) return true; // 모두 채워짐
 
         const [r, c, cands] = cell;
         if (cands.length === 0) return false; // 막힌 상태
 
-        for (const num of shuffle(cands)) {
+        for (const num of shuffle(cands, rand)) {
             board[r][c] = num;
-            if (fillBoardRandom(board)) return true;
+            if (fillBoardRandom(board, rand)) return true;
             board[r][c] = 0;
         }
         return false;
     }
 
     // 완성된 수도쿠 보드 생성
-    function generateSolution() {
+    function generateSolution(rand) {
         const board = Array.from({ length: 9 }, () => Array(9).fill(0));
-        fillBoardRandom(board);
+        fillBoardRandom(board, rand);
         return board;
     }
 
@@ -119,15 +131,16 @@ const SudokuEngine = (() => {
     }
 
     // 퍼즐 생성 - 완성된 보드에서 숫자를 제거하여 퍼즐 만들기
-    function createPuzzle(level) {
-        const solution = generateSolution();
+    function createPuzzle(level, rand) {
+        const solution = generateSolution(rand);
         const puzzle = solution.map(row => [...row]);
         const targetClues = getClueCount(level);
         const toRemove = 81 - targetClues;
 
         // 모든 칸 위치를 무작위로 섞기
         const positions = shuffle(
-            Array.from({ length: 81 }, (_, i) => [Math.floor(i / 9), i % 9])
+            Array.from({ length: 81 }, (_, i) => [Math.floor(i / 9), i % 9]),
+            rand
         );
 
         let removed = 0;
@@ -174,9 +187,16 @@ const SudokuEngine = (() => {
         return false;
     }
 
+    // 시드 기반 퍼즐 생성 (같은 seed + level → 항상 같은 퍼즐)
+    function createPuzzleSeeded(level, seed) {
+        const rand = mulberry32(seed);
+        return createPuzzle(level, rand);
+    }
+
     // 공개 API
     return {
         createPuzzle,
+        createPuzzleSeeded,
         solve,
         getDifficultyInfo,
         getClueCount,

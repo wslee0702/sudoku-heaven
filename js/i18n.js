@@ -79,6 +79,10 @@ const T = {
         pctOther:(p) => `📊 상위 ${p}%의 기록이에요. 더 잘할 수 있어요!`,
         // 순위 토스트
         rankToast: (emoji, lv, rank) => `${emoji} Lv.${lv} 시즌 ${rank}위 달성!`,
+        // 데일리 챌린지
+        dailyBtnText: '📅 오늘의 챌린지',
+        tabDaily:     '📅 오늘의 챌린지',
+        autoMemoBtn:  '✨ 자동 메모',
         // 난이도명
         diffMap: { '입문':'입문', '쉬움':'쉬움', '보통':'보통', '어려움':'어려움', '전문가':'전문가' },
     },
@@ -146,6 +150,10 @@ const T = {
         pct50:   (p) => `👍 Top ${p}%!`,
         pctOther:(p) => `📊 Top ${p}%. You can do better!`,
         rankToast: (emoji, lv, rank) => `${emoji} Lv.${lv} Season Rank #${rank}!`,
+        // Daily challenge
+        dailyBtnText: '📅 Daily Challenge',
+        tabDaily:     '📅 Daily Challenge',
+        autoMemoBtn:  '✨ Auto Notes',
         diffMap: { '입문':'Beginner', '쉬움':'Easy', '보통':'Medium', '어려움':'Hard', '전문가':'Expert' },
     },
 };
